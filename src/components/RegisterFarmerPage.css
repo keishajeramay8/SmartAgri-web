@@ -1,0 +1,178 @@
+/* RESET */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow-x: hidden;
+  background: #F9F6EE;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* LAYOUT */
+.rf-dashboard {
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+  background: #f6f5ef;
+  overflow: hidden;
+}
+
+/* SIDEBAR */
+.rf-sidebar {
+  width: 240px;
+  min-width: 240px;
+  background: #ffffff;
+  padding: 16px;
+  border-right: 1px solid #e2e2e2;
+  display: flex;
+  flex-direction: column;
+}
+
+/* LOGO */
+.rf-logo {
+  text-align: center;
+  margin-bottom: 25px;
+  font-size: 24px;
+  font-weight: 700;
+  color: #f39c12;
+}
+
+.rf-logo .smart {
+  font-style: italic;
+  font-weight: 400;
+}
+
+/* PROFILE */
+.rf-profile {
+  text-align: center;
+  margin-bottom: 25px;   /* SAME as dashboard */
+}
+
+.rf-avatar {
+  width: 70px;
+  height: 70px;
+  background: #ddd;
+  border-radius: 50%;
+  margin: auto;
+  margin-bottom: 10px;
+}
+
+.rf-profile h4 {
+  margin: 10px 0 3px;
+  font-size: 16px;
+}
+
+.rf-profile p {
+  font-size: 12px;
+  color: green;          /* NO extra margin here */
+}
+
+/* MENU */
+.rf-menu a {
+  text-decoration: none;
+  padding: 10px;
+  border-radius: 6px;
+  color: #333;
+  display: block;
+  font-size: 16px;
+}
+
+.rf-menu a:hover,
+.rf-menu a.active {
+  background: #e8f3e8;
+  font-weight: bold;
+}
+
+/* LOGOUT */
+.rf-logout {
+  margin-top: auto;
+  padding: 10px;
+  border: none;
+  background: #ff5c5c;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* MAIN CONTENT — SAME AS .main */
+.rf-main {
+  flex: 1;
+  padding: 20px;          /* this creates the spacing */
+  overflow-y: auto;
+  max-width: 100%;
+}
+
+/* HEADER — NO EXTRA PADDING */
+.rf-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;    /* same visual gap as dashboard */
+}
+
+.rf-header h1 {
+  font-size: 20px;
+  letter-spacing: 1px;
+}
+
+/* TABLE SECTION */
+.rf-table-section {
+  padding: 0 20px 20px 20px;
+}
+
+/* TABLE */
+.rf-table-header,
+.rf-row {
+  display: grid;
+  grid-template-columns: 400fr 200fr 200fr 400px;
+  align-items: center;
+  padding: 14px 0;
+  column-gap: 20px;
+  width: 100%;
+}
+
+.rf-table-header {
+  font-weight: bold;
+  border-bottom: 2px solid #ddd;
+  color: #444;
+  position: sticky;
+  top: 0;
+  background: #F9F6EE;
+}
+
+.rf-row {
+  border-bottom: 1px solid #eee;
+  font-size: 14px;
+}
+
+/* ACTION BUTTONS */
+.rf-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.rf-actions button {
+  width: 32px;
+  height: 32px;
+  border: none;
+  color: white;
+  font-size: 18px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.rf-actions .add {
+  background: #38a169;
+}
+
+.rf-actions .remove {
+  background: #e53e3e;
+}

@@ -1,0 +1,131 @@
+/* Make sure html and body cover the full screen */
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;          /* Fill viewport height */
+  width: 100%;           /* Fill viewport width */
+  background: #F9F6EE;   /* Fallback background color */
+  font-family: Arial, sans-serif;
+}
+
+/* Section that wraps the whole screen */
+.landing-section {
+  min-height: 100vh;       /* Fill the viewport height */
+  width: 100vw;            /* Fill the viewport width */
+  display: flex;
+  align-items: center;
+  justify-content: center;  /* Keep wrapper centered */
+  background-color: #F9F6EE;
+  box-sizing: border-box;
+  padding: 0 20px;         /* Keep spacing */
+}
+
+/* Wrapper keeps content aligned */
+.wrapper {
+  display: flex;
+  width: 100%;
+  max-width: 1200px;       /* Optional: constrain content width */
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* LEFT IMAGE AREA */
+.image-area {
+  width: 45%;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.image-area img {
+  width: 80%;       /* Keep smaller image */
+  max-width: 300px;
+  height: auto;
+}
+
+/* RIGHT TEXT AREA */
+.text-area {
+  width: 55%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin-left: -50px;  /* Negative margin moves it left */
+}
+
+
+.text-area h1 {
+  font-size: 56px;
+  font-weight: 800;
+  line-height: 1.1;
+  color: #F4A300;
+  margin: 0;
+  left: -8px; /* shift heading left */
+}
+
+
+.text-area h1 .italic {
+  font-family: serif;
+  font-style: italic;
+  position: relative;
+  left: -6px;
+  font-weight: 400;
+}
+
+.text-area h1 .bold {
+  font-family: serif;
+  font-weight: 700;
+}
+
+.text-area p {
+  margin-top: 16px;
+  margin-left: 40px;   /* Paragraph shifted further right */
+  font-size: 18px;
+  color: #444;
+}
+.text-area {
+  text-align: center; /* keep overall centering */
+}
+
+.brand {
+  display: inline-block;
+  transform: translateX(-10px); /* ← adjust value */
+}
+
+
+.text-area button {
+  margin-top: 32px;
+  background-color: #E63462;
+  color: white;
+  padding: 16px 64px;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  transform: translateX(80px); /* 👉 moves RIGHT */
+  transition: transform 0.3s ease, background-color 0.3s;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.text-area button:hover {
+  background-color: #D12454;
+  
+}
+
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .wrapper {
+    flex-direction: column;
+    align-items: center;
+  }
+  .image-area, .text-area {
+    width: 100%;
+    text-align: center;
+  }
+  .text-area h1 {
+    font-size: 40px;
+  }
+  .text-area button {
+    padding: 12px 48px;
+  }
+}
