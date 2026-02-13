@@ -37,23 +37,34 @@ html, body {
 
 /* Logo */
 .logo {
-  text-align: center;      /* Center horizontally */
-  margin-bottom: 25px;     /* Space below logo */
-  font-size: 24px;         /* Adjust size */
-  font-weight: 700;        /* Bold AGRI */
+  text-align: center;
+  margin-bottom: 25px;
+  font-size: 24px;
+  font-weight: 700;
   color: #f39c12;
 }
 
 /* Italic "Smart" */
 .logo .italic {
   font-style: italic;
-  font-weight: 400; /* lighter than AGRI */
+  font-weight: 400;
 }
 
-
+/* Profile with bottom border to lock menu */
 .profile {
   text-align: center;
-  margin-bottom: 25px;
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  min-height: 120px; /* locks height to prevent jumping */
+  border-bottom: 1px solid #e2e2e2; /* separator line */
+}
+
+.profile h4 {
+  font-size: 14px;
+  min-height: 20px; /* reserve space for name */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .avatar {
@@ -70,20 +81,24 @@ html, body {
   color: green;
 }
 
+/* ✅ FIXED SIDEBAR MENU (NO MOVEMENT) */
 .menu a {
   text-decoration: none;
   padding: 10px;
   border-radius: 6px;
   color: #333;
   display: block;
+  font-weight: normal;
+  border-left: 3px solid transparent; /* reserve space */
 }
 
 .menu a:hover,
 .menu a.active {
   background: #e8f3e8;
-  font-weight: bold;
+  border-left: 3px solid transparent;
 }
 
+/* Logout */
 .logout {
   margin-top: auto;
   padding: 10px;
@@ -164,11 +179,11 @@ html, body {
   gap: 15px;
   font-size: 14px;
 }
-.weather-icon {
-  width: 400px;  /* Increase size */
-  height: 150px; /* Maintain square aspect */
-}
 
+.weather-icon {
+  width: 400px;
+  height: 150px;
+}
 
 .sun {
   width: 80px;

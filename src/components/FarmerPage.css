@@ -28,15 +28,40 @@ html, body {
 .f-logo { text-align:center; margin-bottom:25px; font-size:24px; font-weight:700; color:#f39c12; }
 .f-logo .smart { font-style:italic; font-weight:400; }
 
-/* PROFILE */
-.f-profile { text-align:center; margin-bottom:25px; }
+/* PROFILE - FIXED HEIGHT + BORDER */
+.f-profile {
+  text-align:center;
+  margin-bottom:16px;
+  padding-bottom:10px;
+  min-height:120px;          /* locks height to prevent jumping */
+  border-bottom:1px solid #e2e2e2; /* separator line */
+}
 .f-avatar { width:70px; height:70px; background:#ddd; border-radius:50%; margin:0 auto 10px; }
-.f-profile h4 { margin:10px 0 3px; font-size:16px; }
+.f-profile h4 {
+  margin:10px 0 3px;
+  font-size:16px;
+  min-height:20px;          /* reserve space for name to prevent jump */
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
 .f-profile p { font-size:12px; color:green; }
 
 /* MENU */
-.f-menu a { text-decoration:none; padding:10px; border-radius:6px; color:#333; display:block; font-size:16px; }
-.f-menu a:hover, .f-menu a.active { background:#e8f3e8; font-weight:bold; }
+.f-menu a {
+  text-decoration:none;
+  padding:10px;
+  border-radius:6px;
+  color:#333;
+  display:block;
+  font-size:16px;
+  font-weight:normal;       /* keep normal */
+  border-left:3px solid transparent; /* reserve space to prevent jump */
+}
+.f-menu a:hover, .f-menu a.active {
+  background:#e8f3e8;
+  border-left:3px solid transparent; /* keeps layout stable */
+}
 
 /* LOGOUT */
 .f-logout { margin-top:auto; padding:10px; border:none; background:#ff5c5c; color:white; border-radius:6px; cursor:pointer; }
@@ -56,6 +81,25 @@ html, body {
 
 /* ACTION BUTTONS */
 .f-actions { display:flex; gap:10px; justify-content:flex-end; }
-.f-actions button { width:32px; height:32px; border:none; color:white; font-size:18px; border-radius:4px; cursor:pointer; }
-.f-actions .add { background:#38a169; }
-.f-actions .remove { background:#e53e3e; }
+.f-actions button.delete-icon {
+  width:32px;
+  height:32px;
+  border:none;
+  background:#e53e3e;
+  color:white;
+  font-size:16px;
+  border-radius:4px;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition: background 0.3s;
+}
+
+/* Ensure icons are visible */
+.f-actions button.delete-icon svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+  fill: currentColor;
+}

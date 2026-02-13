@@ -9,23 +9,27 @@ export default function DashboardPage() {
   const [address, setAddress] = useState(""); // store user's address
   const [currentDate, setCurrentDate] = useState("");
   const [currentTime, setCurrentTime] = useState("");
+  const [userName, setUserName] = useState({ first: "", last: "" }); // for first & last name
   const apiKey = "17a5aa9601f1e26815cc0cd44578658e"; // OpenWeatherMap API key
 
-  // 1️⃣ Fetch logged-in user's address from Firebase
+  // 1️⃣ Fetch logged-in user's name and address from Firebase
   useEffect(() => {
-    const fetchUserAddress = async () => {
-      if (auth.currentUser) {
-        const userRef = ref(database, `users/${auth.currentUser.uid}/address`);
+    const fetchUserData = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        const userRef = ref(database, `users/${user.uid}`);
         const snapshot = await get(userRef);
         if (snapshot.exists()) {
-          setAddress(snapshot.val());
+          const data = snapshot.val();
+          setUserName({ first: data.firstName, last: data.lastName });
+          setAddress(data.address || "");
         } else {
-          console.log("No address found for this user.");
+          console.log("No user data found.");
         }
       }
     };
 
-    const timeout = setTimeout(fetchUserAddress, 500);
+    const timeout = setTimeout(fetchUserData, 500);
     return () => clearTimeout(timeout);
   }, []);
 
@@ -57,29 +61,29 @@ export default function DashboardPage() {
     if (!weather) return;
 
     const updateTime = () => {
-      // weather.timezone is in seconds offset from UTC
-      const nowUTC = new Date().getTime() + new Date().getTimezoneOffset() * 60000; // UTC in ms
+      const nowUTC = new Date().getTime() + new Date().getTimezoneOffset() * 60000;
       const localTime = new Date(nowUTC + weather.timezone * 1000);
 
-      const dateStr = localTime.toLocaleDateString(undefined, {
-        weekday: "long",
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      });
+      setCurrentDate(
+        localTime.toLocaleDateString(undefined, {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        })
+      );
 
-      const timeStr = localTime.toLocaleTimeString(undefined, {
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-      });
-
-      setCurrentDate(dateStr);
-      setCurrentTime(timeStr);
+      setCurrentTime(
+        localTime.toLocaleTimeString(undefined, {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        })
+      );
     };
 
-    updateTime(); // initial set
-    const interval = setInterval(updateTime, 1000); // update every second
+    updateTime();
+    const interval = setInterval(updateTime, 1000);
 
     return () => clearInterval(interval);
   }, [weather]);
@@ -94,20 +98,20 @@ export default function DashboardPage() {
 
         <div className="profile">
           <div className="avatar"></div>
-          <h4>{auth.currentUser?.email}</h4>
+          <h4>{userName.first} {userName.last}</h4> {/* Display first & last name */}
           <span className="role">Registered Admin</span>
         </div>
 
         <nav className="menu">
-  <Link to="/dashboard">Dashboard</Link>
-  <Link to="/register-farmer">Register Farmer</Link>
-  <Link to="/farmers">Farmers</Link>
-  <Link to="/soil-status">Soil Moisture Status</Link>
-  <Link to="/notifications">Notification</Link>
-  <Link to="/terms">Terms and Conditions</Link>
-  <Link to="/privacy">Privacy Policy</Link>
-  <Link to="/report">Report</Link>
-</nav>
+          <Link to="/dashboard">Dashboard</Link>
+          <Link to="/register-farmer">Register Farmer</Link>
+          <Link to="/farmers">Farmers</Link>
+          <Link to="/soil-status">Soil Moisture Status</Link>
+          <Link to="/notifications">Notification</Link>
+          <Link to="/terms">Terms and Conditions</Link>
+          <Link to="/privacy">Privacy Policy</Link>
+          <Link to="/report">Report</Link>
+        </nav>
 
         <button className="logout">Logout</button>
       </aside>
@@ -132,7 +136,6 @@ export default function DashboardPage() {
 
         {/* WEATHER + SOIL ROW */}
         <div className="row">
-          {/* Weather Card */}
           <div className="weather">
             <h3>Current Weather</h3>
             {weather ? (
@@ -155,16 +158,12 @@ export default function DashboardPage() {
             )}
           </div>
 
-          {/* Soil Card */}
           <div className="soil">
             <h3>Soil Moisture</h3>
-            <div className="graph-placeholder">
-              {/* Replace with your chart or sensor data */}
-            </div>
+            <div className="graph-placeholder"></div>
           </div>
         </div>
 
-        {/* ANALYTICS */}
         <div className="analytics">
           <h3>Analytics</h3>
           <div className="analytics-row">
@@ -185,7 +184,6 @@ export default function DashboardPage() {
   );
 }
 
-// Reusable Stat Card
 function StatCard({ title, value }) {
   return (
     <div className="card">
