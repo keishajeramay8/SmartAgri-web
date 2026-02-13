@@ -50,18 +50,18 @@ html, body {
   font-weight: 400;
 }
 
-/* Profile with bottom border to lock menu */
+/* Profile */
 .profile {
   text-align: center;
   margin-bottom: 16px;
   padding-bottom: 10px;
-  min-height: 120px; /* locks height to prevent jumping */
-  border-bottom: 1px solid #e2e2e2; /* separator line */
+  min-height: 120px;
+  border-bottom: 1px solid #e2e2e2;
 }
 
 .profile h4 {
   font-size: 14px;
-  min-height: 20px; /* reserve space for name */
+  min-height: 20px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -81,7 +81,7 @@ html, body {
   color: green;
 }
 
-/* ✅ FIXED SIDEBAR MENU (NO MOVEMENT) */
+/* SIDEBAR MENU */
 .menu a {
   text-decoration: none;
   padding: 10px;
@@ -89,7 +89,7 @@ html, body {
   color: #333;
   display: block;
   font-weight: normal;
-  border-left: 3px solid transparent; /* reserve space */
+  border-left: 3px solid transparent;
 }
 
 .menu a:hover,
@@ -122,6 +122,28 @@ html, body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px; /* space between button and user icon */
+}
+
+/* FARM GROUP BUTTON */
+.farm-group-btn {
+  background-color: #e91e63; /* pink */
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background 0.3s;
+}
+
+.farm-group-btn:hover {
+  background-color: #d81b60; /* darker pink on hover */
 }
 
 .user-icon {
@@ -250,6 +272,15 @@ html, body {
     width: 200px;
     min-width: 200px;
   }
+
+  .header-right {
+    gap: 8px;
+  }
+
+  .farm-group-btn {
+    padding: 6px 12px;
+    font-size: 14px;
+  }
 }
 
 /* MOBILE */
@@ -277,5 +308,26 @@ html, body {
 
   .row {
     grid-template-columns: 1fr;
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .header-right {
+    width: 100%;
+    justify-content: flex-end;
+    margin-top: 5px;
+  }
+
+  .farm-group-btn {
+    padding: 6px 12px;
+    font-size: 14px;
+  }
+
+  .user-icon {
+    margin-left: 10px;
   }
 }

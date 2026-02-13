@@ -1,7 +1,7 @@
 // src/pages/FarmerPage.jsx
 import React, { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
-import { FaTrash } from "react-icons/fa"; // trash icon
+import { FaTrash } from "react-icons/fa"; // ✅ Trash icon
 import { auth, database } from "../firebase";
 import { ref, get } from "firebase/database";
 import "./FarmerPage.css";
@@ -20,7 +20,7 @@ export default function FarmerPage() {
 
   const [userName, setUserName] = useState({ first: "", last: "" });
 
-  // Fetch logged-in user's first and last name from Firebase
+  // Fetch logged-in user's name from Firebase
   useEffect(() => {
     const fetchUserName = async () => {
       const user = auth.currentUser;
@@ -29,18 +29,16 @@ export default function FarmerPage() {
         const snapshot = await get(userRef);
         if (snapshot.exists()) {
           const data = snapshot.val();
-          setUserName({ first: data.firstName, last: data.lastName });
-        } else {
-          console.log("No user data found.");
+          setUserName({ first: data.firstName || "", last: data.lastName || "" });
         }
       }
     };
 
+    // delay to ensure auth.currentUser is ready
     const timeout = setTimeout(fetchUserName, 500);
     return () => clearTimeout(timeout);
   }, []);
 
-  // Remove farmer from list
   const handleRemove = (id) => {
     setFarmers(farmers.filter((f) => f.id !== id));
   };
@@ -98,7 +96,8 @@ export default function FarmerPage() {
                   onClick={() => handleRemove(f.id)}
                   title="Delete Farmer"
                 >
-                  <FaTrash size={16} />
+                  {/* Trash icon */}
+                  <FaTrash />
                 </button>
               </div>
             </div>

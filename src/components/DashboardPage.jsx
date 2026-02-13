@@ -6,13 +6,13 @@ import "./DashboardPage.css";
 
 export default function DashboardPage() {
   const [weather, setWeather] = useState(null);
-  const [address, setAddress] = useState(""); // store user's address
+  const [address, setAddress] = useState("");
   const [currentDate, setCurrentDate] = useState("");
   const [currentTime, setCurrentTime] = useState("");
-  const [userName, setUserName] = useState({ first: "", last: "" }); // for first & last name
-  const apiKey = "17a5aa9601f1e26815cc0cd44578658e"; // OpenWeatherMap API key
+  const [userName, setUserName] = useState({ first: "", last: "" });
+  const apiKey = "17a5aa9601f1e26815cc0cd44578658e";
 
-  // 1️⃣ Fetch logged-in user's name and address from Firebase
+  // Fetch logged-in user's name and address from Firebase
   useEffect(() => {
     const fetchUserData = async () => {
       const user = auth.currentUser;
@@ -33,37 +33,30 @@ export default function DashboardPage() {
     return () => clearTimeout(timeout);
   }, []);
 
-  // 2️⃣ Fetch weather data based on the user's address
+  // Fetch weather data based on the user's address
   useEffect(() => {
     const fetchWeather = async () => {
       if (!address) return;
-
       try {
         const res = await fetch(
           `https://api.openweathermap.org/data/2.5/weather?q=${address}&appid=${apiKey}&units=metric`
         );
         const data = await res.json();
-        if (data.cod === 200) {
-          setWeather(data);
-        } else {
-          console.error("City not found or API error:", data.message);
-        }
+        if (data.cod === 200) setWeather(data);
+        else console.error("City not found or API error:", data.message);
       } catch (error) {
         console.error("Weather API error:", error);
       }
     };
-
     fetchWeather();
   }, [address]);
 
-  // 3️⃣ Update exact local date & time based on weather.timezone
+  // Update exact local date & time based on weather.timezone
   useEffect(() => {
     if (!weather) return;
-
     const updateTime = () => {
       const nowUTC = new Date().getTime() + new Date().getTimezoneOffset() * 60000;
       const localTime = new Date(nowUTC + weather.timezone * 1000);
-
       setCurrentDate(
         localTime.toLocaleDateString(undefined, {
           weekday: "long",
@@ -72,7 +65,6 @@ export default function DashboardPage() {
           day: "numeric",
         })
       );
-
       setCurrentTime(
         localTime.toLocaleTimeString(undefined, {
           hour: "2-digit",
@@ -81,10 +73,8 @@ export default function DashboardPage() {
         })
       );
     };
-
     updateTime();
     const interval = setInterval(updateTime, 1000);
-
     return () => clearInterval(interval);
   }, [weather]);
 
@@ -96,9 +86,10 @@ export default function DashboardPage() {
           <span className="italic">Smart</span>AGRI
         </h2>
 
+        {/* Profile on the left sidebar */}
         <div className="profile">
           <div className="avatar"></div>
-          <h4>{userName.first} {userName.last}</h4> {/* Display first & last name */}
+          <h4>{userName.first} {userName.last}</h4>
           <span className="role">Registered Admin</span>
         </div>
 
@@ -123,7 +114,13 @@ export default function DashboardPage() {
             <h1>DASHBOARD</h1>
             <p>Welcome to your SmartAGRI Dashboard!</p>
           </div>
-          <div className="user-icon"></div>
+
+          {/* Only Farm Group button on the upper right */}
+          <div className="header-right">
+            <Link to="/create-farm-group">
+              <button className="farm-group-btn">Farm Group</button>
+            </Link>
+          </div>
         </header>
 
         {/* STAT CARDS */}
