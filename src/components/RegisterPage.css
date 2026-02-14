@@ -26,6 +26,13 @@ body {
   width: 100vw;
   background-color: #f9f6ee;
 }
+.inline-error {
+  color: red;
+  font-size: 0.75rem; /* small text like screenshot */
+  margin-top: 2px;
+  margin-right: 250px;
+  font-weight: normal;
+}
 
 /* =========================
    LEFT SIDE (LOGO)

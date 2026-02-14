@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { auth, database } from "../firebase";
 import { ref, get } from "firebase/database";
+import { signOut } from "firebase/auth";
 import "./RegisterFarmerPage.css";
 
 export default function RegisterFarmerPage() {
+  const navigate = useNavigate(); // added navigation
+
   const [farmers, setFarmers] = useState([
     { id: 1, first: "Jose", last: "Cruz", email: "jose.cruz@example.com" },
     { id: 2, first: "Maria", last: "Reyes", email: "maria.reyes@example.com" },
@@ -13,9 +16,19 @@ export default function RegisterFarmerPage() {
     { id: 5, first: "Amihan", last: "Ramos", email: "amihan@example.com" },
   ]);
 
-  const [userName, setUserName] = useState({ first: "", last: "" }); // store logged-in user's name
+  const [userName, setUserName] = useState({ first: "", last: "" });
 
-  // Fetch logged-in user's first and last name from Firebase
+  // ✅ Logout function added (design unchanged)
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      navigate("/login");
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
+
+  // Fetch logged-in user's first and last name
   useEffect(() => {
     const fetchUserName = async () => {
       const user = auth.currentUser;
@@ -55,7 +68,9 @@ export default function RegisterFarmerPage() {
 
         <nav className="f-menu">
           <NavLink to="/dashboard">Dashboard</NavLink>
-          <NavLink to="/register-farmer" className="active">Register Farmer</NavLink>
+          <NavLink to="/register-farmer" className="active">
+            Register Farmer
+          </NavLink>
           <NavLink to="/farmers">Farmers</NavLink>
           <NavLink to="/soil-status">Soil Moisture Status</NavLink>
           <NavLink to="/notifications">Notification</NavLink>
@@ -64,7 +79,10 @@ export default function RegisterFarmerPage() {
           <NavLink to="/report">Report</NavLink>
         </nav>
 
-        <button className="f-logout">Logout</button>
+        {/* Logout button now working */}
+        <button className="f-logout" onClick={handleLogout}>
+          Logout
+        </button>
       </aside>
 
       {/* MAIN CONTENT */}
@@ -88,7 +106,12 @@ export default function RegisterFarmerPage() {
               <span>{f.email}</span>
               <div className="f-actions">
                 <button className="add">+</button>
-                <button className="remove" onClick={() => handleRemove(f.id)}>−</button>
+                <button
+                  className="remove"
+                  onClick={() => handleRemove(f.id)}
+                >
+                  −
+                </button>
               </div>
             </div>
           ))}

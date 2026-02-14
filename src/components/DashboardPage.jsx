@@ -1,62 +1,84 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { auth, database } from "../firebase";
 import { ref, get } from "firebase/database";
+import { signOut } from "firebase/auth";
+import axios from "axios";
 import "./DashboardPage.css";
 
+const WEATHER_KEY = "17a5aa9601f1e26815cc0cd44578658e";
+
 export default function DashboardPage() {
+  const navigate = useNavigate(); // added for navigation
+
   const [weather, setWeather] = useState(null);
-  const [address, setAddress] = useState("");
   const [currentDate, setCurrentDate] = useState("");
   const [currentTime, setCurrentTime] = useState("");
   const [userName, setUserName] = useState({ first: "", last: "" });
-  const apiKey = "17a5aa9601f1e26815cc0cd44578658e";
+  const [userLatLon, setUserLatLon] = useState({ lat: null, lon: null });
 
-  // Fetch logged-in user's name and address from Firebase
+  // ✅ Logout function (no design changes)
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      navigate("/login");
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
+
   useEffect(() => {
     const fetchUserData = async () => {
       const user = auth.currentUser;
-      if (user) {
-        const userRef = ref(database, `users/${user.uid}`);
-        const snapshot = await get(userRef);
-        if (snapshot.exists()) {
-          const data = snapshot.val();
-          setUserName({ first: data.firstName, last: data.lastName });
-          setAddress(data.address || "");
-        } else {
-          console.log("No user data found.");
-        }
+      if (!user) return;
+
+      const userRef = ref(database, `users/${user.uid}`);
+      const snapshot = await get(userRef);
+
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        setUserName({ first: data.firstName, last: data.lastName });
+        setUserLatLon({ lat: data.lat, lon: data.lon });
       }
     };
 
-    const timeout = setTimeout(fetchUserData, 500);
-    return () => clearTimeout(timeout);
+    fetchUserData();
   }, []);
 
-  // Fetch weather data based on the user's address
   useEffect(() => {
     const fetchWeather = async () => {
-      if (!address) return;
+      if (!userLatLon.lat || !userLatLon.lon) return;
+
       try {
-        const res = await fetch(
-          `https://api.openweathermap.org/data/2.5/weather?q=${address}&appid=${apiKey}&units=metric`
+        const weatherRes = await axios.get(
+          "https://api.openweathermap.org/data/2.5/weather",
+          {
+            params: {
+              lat: userLatLon.lat,
+              lon: userLatLon.lon,
+              appid: WEATHER_KEY,
+              units: "metric",
+            },
+          }
         );
-        const data = await res.json();
-        if (data.cod === 200) setWeather(data);
-        else console.error("City not found or API error:", data.message);
-      } catch (error) {
-        console.error("Weather API error:", error);
+        setWeather(weatherRes.data);
+      } catch (err) {
+        console.error("Weather API error:", err);
+        setWeather(null);
       }
     };
-    fetchWeather();
-  }, [address]);
 
-  // Update exact local date & time based on weather.timezone
+    fetchWeather();
+  }, [userLatLon]);
+
   useEffect(() => {
     if (!weather) return;
+
     const updateTime = () => {
-      const nowUTC = new Date().getTime() + new Date().getTimezoneOffset() * 60000;
+      const nowUTC =
+        new Date().getTime() + new Date().getTimezoneOffset() * 60000;
       const localTime = new Date(nowUTC + weather.timezone * 1000);
+
       setCurrentDate(
         localTime.toLocaleDateString(undefined, {
           weekday: "long",
@@ -73,6 +95,7 @@ export default function DashboardPage() {
         })
       );
     };
+
     updateTime();
     const interval = setInterval(updateTime, 1000);
     return () => clearInterval(interval);
@@ -85,14 +108,13 @@ export default function DashboardPage() {
         <h2 className="logo">
           <span className="italic">Smart</span>AGRI
         </h2>
-
-        {/* Profile on the left sidebar */}
         <div className="profile">
           <div className="avatar"></div>
-          <h4>{userName.first} {userName.last}</h4>
+          <h4>
+            {userName.first} {userName.last}
+          </h4>
           <span className="role">Registered Admin</span>
         </div>
-
         <nav className="menu">
           <Link to="/dashboard">Dashboard</Link>
           <Link to="/register-farmer">Register Farmer</Link>
@@ -104,7 +126,10 @@ export default function DashboardPage() {
           <Link to="/report">Report</Link>
         </nav>
 
-        <button className="logout">Logout</button>
+        {/* Only functionality added here */}
+        <button className="logout" onClick={handleLogout}>
+          Logout
+        </button>
       </aside>
 
       {/* MAIN CONTENT */}
@@ -114,8 +139,6 @@ export default function DashboardPage() {
             <h1>DASHBOARD</h1>
             <p>Welcome to your SmartAGRI Dashboard!</p>
           </div>
-
-          {/* Only Farm Group button on the upper right */}
           <div className="header-right">
             <Link to="/create-farm-group">
               <button className="farm-group-btn">Farm Group</button>
@@ -131,7 +154,7 @@ export default function DashboardPage() {
           <StatCard title="Water Used Today" value="45 L" />
         </div>
 
-        {/* WEATHER + SOIL ROW */}
+        {/* WEATHER + SOIL */}
         <div className="row">
           <div className="weather">
             <h3>Current Weather</h3>
@@ -151,7 +174,7 @@ export default function DashboardPage() {
                 />
               </div>
             ) : (
-              <p>Loading weather...</p>
+              <p>Weather data not available for your location</p>
             )}
           </div>
 
@@ -161,6 +184,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {/* ANALYTICS */}
         <div className="analytics">
           <h3>Analytics</h3>
           <div className="analytics-row">

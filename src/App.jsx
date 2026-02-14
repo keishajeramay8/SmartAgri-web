@@ -5,26 +5,34 @@ import FarmerPage from "./components/FarmerPage.jsx";
 import RegisterFarmerPage from "./components/RegisterFarmerPage.jsx";
 import LoginPage from "./components/LoginPage.jsx";
 import DashboardPage from "./components/DashboardPage.jsx";
-import CreateFarmGroupPage from "./components/CreateFarmGroupPage.jsx"; // ✅ new page
+import CreateFarmGroupPage from "./components/CreateFarmGroupPage.jsx";
+import SoilMoisturePage from "./components/SoilMoisturePage.jsx"; // ✅ added
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Default route shows LandingPage first */}
+        {/* Default route */}
         <Route path="/" element={<LandingPage />} />
 
-        {/* Other routes */}
+        {/* Auth */}
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/login" element={<LoginPage />} />
+
+        {/* Dashboard */}
+        <Route path="/dashboard" element={<DashboardPage />} />
+
+        {/* Farmer Pages */}
         <Route path="/register-farmer" element={<RegisterFarmerPage />} />
         <Route path="/farmers" element={<FarmerPage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
+
+        {/* Soil Moisture Page */}
+        <Route path="/soil-status" element={<SoilMoisturePage />} /> {/* ✅ added */}
 
         {/* Farm Group Page */}
         <Route path="/create-farm-group" element={<CreateFarmGroupPage />} />
 
-        {/* Fallback route also shows LandingPage */}
+        {/* Fallback */}
         <Route path="*" element={<LandingPage />} />
       </Routes>
     </BrowserRouter>

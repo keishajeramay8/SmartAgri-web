@@ -9,7 +9,7 @@
 }
 
 .header-right .farm-group-btn:hover {
-  background: #ddd;
+  background: #eb92be;
 }
 
 .farmgroup-list table {
@@ -139,5 +139,5 @@
 }
 
 .cancel-btn:hover {
-  background: #b0b0b0;
+  background: #eb92be;
 }

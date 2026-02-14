@@ -1,12 +1,15 @@
 // src/pages/FarmerPage.jsx
 import React, { useEffect, useState } from "react";
-import { NavLink } from "react-router-dom";
-import { FaTrash } from "react-icons/fa"; // ✅ Trash icon
+import { NavLink, useNavigate } from "react-router-dom";
+import { FaTrash } from "react-icons/fa";
 import { auth, database } from "../firebase";
 import { ref, get } from "firebase/database";
+import { signOut } from "firebase/auth";
 import "./FarmerPage.css";
 
 export default function FarmerPage() {
+  const navigate = useNavigate(); // navigation added
+
   const [farmers, setFarmers] = useState([
     { id: 1, first: "Jose", last: "Cruz", email: "jose.cruz@example.com" },
     { id: 2, first: "Maria", last: "Reyes", email: "maria.reyes@example.com" },
@@ -20,6 +23,16 @@ export default function FarmerPage() {
 
   const [userName, setUserName] = useState({ first: "", last: "" });
 
+  // ✅ Logout function
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      navigate("/login"); // redirect to login page
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
+
   // Fetch logged-in user's name from Firebase
   useEffect(() => {
     const fetchUserName = async () => {
@@ -29,12 +42,14 @@ export default function FarmerPage() {
         const snapshot = await get(userRef);
         if (snapshot.exists()) {
           const data = snapshot.val();
-          setUserName({ first: data.firstName || "", last: data.lastName || "" });
+          setUserName({
+            first: data.firstName || "",
+            last: data.lastName || "",
+          });
         }
       }
     };
 
-    // delay to ensure auth.currentUser is ready
     const timeout = setTimeout(fetchUserName, 500);
     return () => clearTimeout(timeout);
   }, []);
@@ -68,7 +83,10 @@ export default function FarmerPage() {
           <NavLink to="/report">Report</NavLink>
         </nav>
 
-        <button className="f-logout">Logout</button>
+        {/* ✅ Logout now redirects */}
+        <button className="f-logout" onClick={handleLogout}>
+          Logout
+        </button>
       </aside>
 
       {/* MAIN CONTENT */}
@@ -96,7 +114,6 @@ export default function FarmerPage() {
                   onClick={() => handleRemove(f.id)}
                   title="Delete Farmer"
                 >
-                  {/* Trash icon */}
                   <FaTrash />
                 </button>
               </div>
