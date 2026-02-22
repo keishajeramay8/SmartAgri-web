@@ -1,59 +1,140 @@
+// src/pages/RegisterFarmerPage.jsx
 import React, { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { auth, database } from "../firebase";
-import { ref, get } from "firebase/database";
+import { auth, db } from "../firebase";
 import { signOut } from "firebase/auth";
+import {
+  collection,
+  getDocs,
+  deleteDoc,
+  doc,
+  query,
+  where,
+  setDoc,
+  serverTimestamp,
+  getDoc
+} from "firebase/firestore";
 import "./RegisterFarmerPage.css";
 
 export default function RegisterFarmerPage() {
-  const navigate = useNavigate(); // added navigation
+  const navigate = useNavigate();
 
-  const [farmers, setFarmers] = useState([
-    { id: 1, first: "Jose", last: "Cruz", email: "jose.cruz@example.com" },
-    { id: 2, first: "Maria", last: "Reyes", email: "maria.reyes@example.com" },
-    { id: 3, first: "Andres", last: "Santos", email: "a.santos@example.com" },
-    { id: 4, first: "Ligaya", last: "Torres", email: "torres.ligaya@example.com" },
-    { id: 5, first: "Amihan", last: "Ramos", email: "amihan@example.com" },
-  ]);
-
+  const [farmers, setFarmers] = useState([]);
   const [userName, setUserName] = useState({ first: "", last: "" });
 
-  // ✅ Logout function added (design unchanged)
   const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      navigate("/login");
-    } catch (error) {
-      console.error("Logout error:", error);
-    }
+    await signOut(auth);
+    navigate("/login");
   };
 
-  // Fetch logged-in user's first and last name
+  // ✅ Load Admin Name from Firestore
   useEffect(() => {
-    const fetchUserName = async () => {
+    const fetchAdminName = async () => {
       const user = auth.currentUser;
-      if (user) {
-        const userRef = ref(database, `users/${user.uid}`);
-        const snapshot = await get(userRef);
-        if (snapshot.exists()) {
-          const data = snapshot.val();
-          setUserName({ first: data.firstName, last: data.lastName });
-        } else {
-          console.log("No user data found.");
+      if (!user) return;
+
+      try {
+        const userDocRef = doc(db, "users", user.uid);
+        const userSnap = await getDoc(userDocRef);
+        if (userSnap.exists()) {
+          const data = userSnap.data();
+          setUserName({
+            first: data.firstName || "",
+            last: data.lastName || "",
+          });
         }
+      } catch (err) {
+        console.error("Error fetching admin name:", err);
       }
     };
 
-    const timeout = setTimeout(fetchUserName, 500);
-    return () => clearTimeout(timeout);
+    fetchAdminName();
   }, []);
 
-  const handleRemove = (id) => {
-    setFarmers(farmers.filter((f) => f.id !== id));
+  // ✅ Load ONLY Pending Farmers from Admin's Farmgroups
+  useEffect(() => {
+    const loadPendingFarmers = async () => {
+      const user = auth.currentUser;
+      if (!user) return;
+
+      try {
+        const groupQuery = query(
+          collection(db, "farmgroups"),
+          where("createdBy", "==", user.uid)
+        );
+
+        const groupSnapshot = await getDocs(groupQuery);
+        let allPending = [];
+
+        for (const groupDoc of groupSnapshot.docs) {
+          const groupId = groupDoc.id;
+          const groupData = groupDoc.data();
+
+          const pendingSnapshot = await getDocs(
+            collection(db, "farmgroups", groupId, "pendingRequests")
+          );
+
+          const pendingList = pendingSnapshot.docs.map(docSnap => ({
+            id: docSnap.id,
+            groupId: groupId,
+            groupName: groupData.farmgroupName,
+            ...docSnap.data()
+          }));
+
+          allPending = [...allPending, ...pendingList];
+        }
+
+        setFarmers(allPending);
+
+      } catch (error) {
+        console.error("Error loading pending farmers:", error);
+      }
+    };
+
+    loadPendingFarmers();
+  }, []);
+
+  // ✅ APPROVE Farmer
+  const handleApprove = async (farmer) => {
+    try {
+      await setDoc(
+        doc(db, "farmgroups", farmer.groupId, "members", farmer.id),
+        {
+          farmerUid: farmer.id,
+          joinedAt: serverTimestamp()
+        }
+      );
+
+      await deleteDoc(
+        doc(db, "farmgroups", farmer.groupId, "pendingRequests", farmer.id)
+      );
+
+      setFarmers(farmers.filter(f => f.id !== farmer.id));
+
+      alert("Farmer approved!");
+    } catch (error) {
+      console.error("Error approving farmer:", error);
+    }
+  };
+
+  // ✅ REJECT Farmer
+  const handleReject = async (farmer) => {
+    try {
+      await deleteDoc(
+        doc(db, "farmgroups", farmer.groupId, "pendingRequests", farmer.id)
+      );
+
+      setFarmers(farmers.filter(f => f.id !== farmer.id));
+
+      alert("Farmer rejected.");
+    } catch (error) {
+      console.error("Error rejecting farmer:", error);
+    }
   };
 
   return (
     <div className="f-dashboard">
+
       {/* SIDEBAR */}
       <aside className="f-sidebar">
         <h2 className="f-logo">
@@ -62,7 +143,7 @@ export default function RegisterFarmerPage() {
 
         <div className="f-profile">
           <div className="f-avatar"></div>
-          <h4>{userName.first} {userName.last}</h4>
+          <h4>{userName.first || "Loading..."} {userName.last}</h4>
           <p>Registered Admin</p>
         </div>
 
@@ -74,24 +155,23 @@ export default function RegisterFarmerPage() {
           <NavLink to="/farmers">Farmers</NavLink>
           <NavLink to="/soil-status">Soil Moisture Status</NavLink>
           <NavLink to="/notifications">Notification</NavLink>
-          <NavLink to="/terms">Terms and Conditions</NavLink>
-          <NavLink to="/privacy">Privacy Policy</NavLink>
-          <NavLink to="/report">Report</NavLink>
+         
         </nav>
 
-        {/* Logout button now working */}
         <button className="f-logout" onClick={handleLogout}>
           Logout
         </button>
       </aside>
 
-      {/* MAIN CONTENT */}
+      {/* MAIN */}
       <main className="f-main">
         <header className="f-header">
-          <h1>REGISTER FARMER</h1>
+          <h1>PENDING FARMER REQUESTS</h1>
         </header>
 
         <section className="f-table-section">
+
+          {/* Table Header */}
           <div className="f-table-header">
             <span>FIRST NAME</span>
             <span>LAST NAME</span>
@@ -99,22 +179,38 @@ export default function RegisterFarmerPage() {
             <span>ACTIONS</span>
           </div>
 
-          {farmers.map((f) => (
+          {/* Table Rows */}
+          {farmers.length > 0 && farmers.map(f => (
             <div className="f-row" key={f.id}>
-              <span>{f.first}</span>
-              <span>{f.last}</span>
-              <span>{f.email}</span>
+              <span>{f.firstName || f.farmerName || f.id}</span>
+              <span>{f.lastName || ""}</span>
+              <span>{f.email || ""}</span>
+
               <div className="f-actions">
-                <button className="add">+</button>
+                <button
+                  className="approve"
+                  onClick={() => handleApprove(f)}
+                >
+                  ✓
+                </button>
+
                 <button
                   className="remove"
-                  onClick={() => handleRemove(f.id)}
+                  onClick={() => handleReject(f)}
                 >
-                  −
+                  ✕
                 </button>
               </div>
             </div>
           ))}
+
+          {/* No Pending Requests Message */}
+          {farmers.length === 0 && (
+            <div style={{ textAlign: "center", marginTop: "20px", fontStyle: "italic", color: "#555" }}>
+              No pending requests.
+            </div>
+          )}
+
         </section>
       </main>
     </div>

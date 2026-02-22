@@ -1,22 +1,19 @@
-// src/firebase.js
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getDatabase } from "firebase/database";
+import { getFirestore } from "firebase/firestore";
 
-// Your Firebase config
 const firebaseConfig = {
-  apiKey: "AIzaSyC9XIkiZqaVevikgctg6u8Ow83dffSXU8I",
-  authDomain: "smartagri-2ef16.firebaseapp.com",
-  projectId: "smartagri-2ef16",
-  storageBucket: "smartagri-2ef16.firebasestorage.app",
-  messagingSenderId: "585746765239",
-  appId: "1:585746765239:web:27589d30b519941d78c432",
-  measurementId: "G-XG0GVQ0LY9"
+  apiKey: "AIzaSyANI1nMfarUwm08XwccpVg8zqSsAqZjytA",
+  authDomain: "smartagri-62ae1.firebaseapp.com",
+  databaseURL: "https://smartagri-62ae1-default-rtdb.firebaseio.com",
+  projectId: "smartagri-62ae1",
+  storageBucket: "smartagri-62ae1.appspot.com",
+  messagingSenderId: "536057132104",
+  appId: "1:536057132104:web:4fa6289aa595dec27b547d",
+  measurementId: "G-FVCNR88T6C"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Auth and Realtime Database exports
 export const auth = getAuth(app);
-export const database = getDatabase(app, "https://smartagri-2ef16-default-rtdb.asia-southeast1.firebasedatabase.app");
+export const db = getFirestore(app);

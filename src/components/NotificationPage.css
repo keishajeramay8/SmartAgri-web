@@ -1,0 +1,55 @@
+.notification-container {
+  margin-top: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.notification-card {
+  padding: 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.notification-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.notification-card h4 {
+  margin: 0;
+  font-weight: 600;
+}
+
+.notification-card p {
+  font-size: 13px;
+  margin-top: 5px;
+}
+
+/* ALERT (Dry soil, irrigation started, errors) */
+.notification-card.alert {
+  background-color: #fff3e0;
+  border-left: 5px solid #fb8c00;
+}
+
+/* UPDATE (Weather updates, system info) */
+.notification-card.update {
+  background-color: #e8f5e9;
+  border-left: 5px solid #43a047;
+}
+
+/* Read style */
+.notification-card.read {
+  opacity: 0.6;
+}
+
+/* Device ID */
+.device-id {
+  font-size: 12px;
+  font-weight: 500;
+  color: #555;
+}

@@ -2,60 +2,91 @@
 import React, { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { FaTrash } from "react-icons/fa";
-import { auth, database } from "../firebase";
-import { ref, get } from "firebase/database";
+import { auth, db } from "../firebase"; // db is Firestore
+import { doc, getDoc, collection, getDocs, deleteDoc } from "firebase/firestore";
 import { signOut } from "firebase/auth";
 import "./FarmerPage.css";
 
-export default function FarmerPage() {
-  const navigate = useNavigate(); // navigation added
+export default function FarmerPage({ farmGroupId }) {
+  const navigate = useNavigate();
 
-  const [farmers, setFarmers] = useState([
-    { id: 1, first: "Jose", last: "Cruz", email: "jose.cruz@example.com" },
-    { id: 2, first: "Maria", last: "Reyes", email: "maria.reyes@example.com" },
-    { id: 3, first: "Andres", last: "Santos", email: "a.santos@example.com" },
-    { id: 4, first: "Ligaya", last: "Torres", email: "torres.ligaya@example.com" },
-    { id: 5, first: "Amihan", last: "Ramos", email: "amihan@example.com" },
-    { id: 6, first: "Bayani", last: "Garcia", email: "bayani23@example.com" },
-    { id: 7, first: "Lakan", last: "Dela Cruz", email: "lakan@example.com" },
-    { id: 8, first: "Pedro", last: "Lopez", email: "lopez.pedro@example.com" },
-  ]);
-
+  const [farmers, setFarmers] = useState([]);
   const [userName, setUserName] = useState({ first: "", last: "" });
 
   // ✅ Logout function
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      navigate("/login"); // redirect to login page
+      navigate("/login");
     } catch (error) {
       console.error("Logout error:", error);
     }
   };
 
-  // Fetch logged-in user's name from Firebase
+  // Fetch logged-in admin's name from Firestore
   useEffect(() => {
     const fetchUserName = async () => {
       const user = auth.currentUser;
-      if (user) {
-        const userRef = ref(database, `users/${user.uid}`);
-        const snapshot = await get(userRef);
-        if (snapshot.exists()) {
-          const data = snapshot.val();
+      if (!user) return;
+
+      try {
+        const userDocRef = doc(db, "users", user.uid);
+        const userSnap = await getDoc(userDocRef);
+        if (userSnap.exists()) {
+          const data = userSnap.data();
           setUserName({
             first: data.firstName || "",
             last: data.lastName || "",
           });
+        } else {
+          console.warn("User document not found in Firestore");
         }
+      } catch (err) {
+        console.error("Error fetching user data from Firestore:", err);
       }
     };
 
-    const timeout = setTimeout(fetchUserName, 500);
-    return () => clearTimeout(timeout);
+    fetchUserName();
   }, []);
 
-  const handleRemove = (id) => {
-    setFarmers(farmers.filter((f) => f.id !== id));
+  // Fetch farmers of the farmgroup from Firestore
+  useEffect(() => {
+    const fetchFarmers = async () => {
+      if (!farmGroupId) return;
+
+      try {
+        const farmersCollectionRef = collection(db, `FarmGroups/${farmGroupId}/farmers`);
+        const snapshot = await getDocs(farmersCollectionRef);
+        if (!snapshot.empty) {
+          const farmerArray = snapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          }));
+          setFarmers(farmerArray);
+        } else {
+          setFarmers([]);
+        }
+      } catch (err) {
+        console.error("Failed to fetch farmers:", err);
+      }
+    };
+
+    fetchFarmers();
+  }, [farmGroupId]);
+
+  // Delete farmer from farmgroup
+  const handleRemove = async (id) => {
+    if (!window.confirm("Are you sure you want to remove this farmer?")) return;
+
+    try {
+      const farmerDocRef = doc(db, `FarmGroups/${farmGroupId}/farmers`, id);
+      await deleteDoc(farmerDocRef);
+      setFarmers(farmers.filter((f) => f.id !== id));
+      alert("Farmer removed successfully.");
+    } catch (error) {
+      console.error("Failed to remove farmer:", error);
+      alert("Failed to remove farmer.");
+    }
   };
 
   return (
@@ -68,7 +99,7 @@ export default function FarmerPage() {
 
         <div className="f-profile">
           <div className="f-avatar"></div>
-          <h4>{userName.first} {userName.last}</h4>
+          <h4>{userName.first || "Loading..."} {userName.last}</h4>
           <p>Registered Admin</p>
         </div>
 
@@ -78,12 +109,9 @@ export default function FarmerPage() {
           <NavLink to="/farmers" className="active">Farmers</NavLink>
           <NavLink to="/soil-status">Soil Moisture Status</NavLink>
           <NavLink to="/notifications">Notification</NavLink>
-          <NavLink to="/terms">Terms and Conditions</NavLink>
-          <NavLink to="/privacy">Privacy Policy</NavLink>
-          <NavLink to="/report">Report</NavLink>
+          
         </nav>
 
-        {/* ✅ Logout now redirects */}
         <button className="f-logout" onClick={handleLogout}>
           Logout
         </button>
@@ -103,22 +131,28 @@ export default function FarmerPage() {
             <span>ACTIONS</span>
           </div>
 
-          {farmers.map((f) => (
-            <div className="f-row" key={f.id}>
-              <span>{f.first}</span>
-              <span>{f.last}</span>
-              <span>{f.email}</span>
-              <div className="f-actions">
-                <button
-                  className="delete-icon"
-                  onClick={() => handleRemove(f.id)}
-                  title="Delete Farmer"
-                >
-                  <FaTrash />
-                </button>
+          {farmers.length === 0 ? (
+            <p style={{ textAlign: "center", marginTop: "20px", fontStyle: "italic", color: "#555" }}>
+              No farmers have joined this farmgroup yet.
+            </p>
+          ) : (
+            farmers.map((f) => (
+              <div className="f-row" key={f.id}>
+                <span>{f.firstName}</span>
+                <span>{f.lastName}</span>
+                <span>{f.email}</span>
+                <div className="f-actions">
+                  <button
+                    className="delete-icon"
+                    onClick={() => handleRemove(f.id)}
+                    title="Delete Farmer"
+                  >
+                    <FaTrash />
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </section>
       </main>
     </div>

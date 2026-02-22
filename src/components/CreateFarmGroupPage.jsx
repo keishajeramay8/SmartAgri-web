@@ -1,57 +1,83 @@
+// src/components/CreateFarmGroupPage.jsx
 import React, { useState, useEffect } from "react";
-import { auth, database } from "../firebase";
-import { ref, get, push, set, remove, update } from "firebase/database";
-import { Link } from "react-router-dom";
+import { auth, db } from "../firebase";
+import {
+  collection,
+  getDocs,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  doc,
+  query,
+  where,
+  serverTimestamp,
+  getDoc
+} from "firebase/firestore";
+import { NavLink, useNavigate } from "react-router-dom";
+import { signOut } from "firebase/auth";
 import "./CreateFarmGroupPage.css";
 
 export default function CreateFarmGroupPage() {
+  const navigate = useNavigate();
+
   const [farmGroups, setFarmGroups] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [newCode, setNewCode] = useState("");
   const [newName, setNewName] = useState("");
-  const [editGroup, setEditGroup] = useState(null); // Track group being edited
-  const [adminName, setAdminName] = useState({ first: "", last: "" }); // Admin name
+  const [editGroup, setEditGroup] = useState(null);
+  const [adminName, setAdminName] = useState({ first: "", last: "" });
 
-  // Fetch admin's name from Firebase
+  // ✅ Logout
+  const handleLogout = async () => {
+    await signOut(auth);
+    navigate("/login");
+  };
+
+  // ✅ Fetch Admin Name (CORRECT VERSION)
   useEffect(() => {
     const fetchAdminName = async () => {
       const user = auth.currentUser;
       if (!user) return;
 
-      const userRef = ref(database, `users/${user.uid}`);
       try {
-        const snapshot = await get(userRef);
-        if (snapshot.exists()) {
-          const data = snapshot.val();
-          setAdminName({ first: data.firstName || "", last: data.lastName || "" });
+        const userDocRef = doc(db, "users", user.uid);
+        const userSnap = await getDoc(userDocRef);
+
+        if (userSnap.exists()) {
+          const data = userSnap.data();
+          setAdminName({
+            first: data.firstName || "",
+            last: data.lastName || ""
+          });
         }
       } catch (error) {
         console.error("Error fetching admin name:", error);
       }
     };
 
-    const timeout = setTimeout(fetchAdminName, 500); // slight delay to ensure auth is ready
-    return () => clearTimeout(timeout);
+    fetchAdminName();
   }, []);
 
-  // Fetch farm groups safely
+  // ✅ Fetch Farm Groups created by this admin
   useEffect(() => {
     const fetchFarmGroups = async () => {
       const user = auth.currentUser;
       if (!user) return;
 
-      const groupsRef = ref(database, `farmGroups/${user.uid}`);
       try {
-        const snapshot = await get(groupsRef);
-        if (snapshot.exists()) {
-          const data = snapshot.val();
-          const list = Object.keys(data).map((key) => ({
-            id: key,
-            code: data[key].code,
-            name: data[key].name,
-          }));
-          setFarmGroups(list);
-        }
+        const q = query(
+          collection(db, "farmgroups"),
+          where("createdBy", "==", user.uid)
+        );
+
+        const snapshot = await getDocs(q);
+
+        const list = snapshot.docs.map((docSnap) => ({
+          id: docSnap.id,
+          ...docSnap.data()
+        }));
+
+        setFarmGroups(list);
       } catch (error) {
         console.error("Error fetching farm groups:", error);
       }
@@ -60,58 +86,79 @@ export default function CreateFarmGroupPage() {
     fetchFarmGroups();
   }, []);
 
-  // Add or Edit farm group
+  // ✅ Add or Edit Farm Group
   const handleAddEditFarmGroup = async (e) => {
     e.preventDefault();
+
     const user = auth.currentUser;
     if (!user || !newCode || !newName) return;
 
-    if (editGroup) {
-      // Editing existing group
-      const groupRef = ref(database, `farmGroups/${user.uid}/${editGroup.id}`);
-      await update(groupRef, { code: newCode, name: newName });
-      setFarmGroups(
-        farmGroups.map((group) =>
-          group.id === editGroup.id ? { ...group, code: newCode, name: newName } : group
-        )
-      );
-      setEditGroup(null);
-    } else {
-      // Adding new group
-      const groupsRef = ref(database, `farmGroups/${user.uid}`);
-      const newGroupRef = push(groupsRef);
-      await set(newGroupRef, { code: newCode, name: newName });
-      setFarmGroups([...farmGroups, { id: newGroupRef.key, code: newCode, name: newName }]);
-    }
+    try {
+      if (editGroup) {
+        const groupRef = doc(db, "farmgroups", editGroup.id);
 
-    setNewCode("");
-    setNewName("");
-    setShowForm(false);
+        await updateDoc(groupRef, {
+          farmgroupCode: newCode,
+          farmgroupName: newName
+        });
+
+        setFarmGroups(
+          farmGroups.map((group) =>
+            group.id === editGroup.id
+              ? { ...group, farmgroupCode: newCode, farmgroupName: newName }
+              : group
+          )
+        );
+
+        setEditGroup(null);
+      } else {
+        const newDoc = await addDoc(collection(db, "farmgroups"), {
+          farmgroupCode: newCode,
+          farmgroupName: newName,
+          createdBy: user.uid,
+          createdAt: serverTimestamp()
+        });
+
+        setFarmGroups([
+          ...farmGroups,
+          {
+            id: newDoc.id,
+            farmgroupCode: newCode,
+            farmgroupName: newName,
+            createdBy: user.uid
+          }
+        ]);
+      }
+
+      setNewCode("");
+      setNewName("");
+      setShowForm(false);
+    } catch (error) {
+      console.error("Error adding/editing farm group:", error);
+    }
   };
 
-  // Edit button
   const handleEdit = (group) => {
     setEditGroup(group);
-    setNewCode(group.code);
-    setNewName(group.name);
+    setNewCode(group.farmgroupCode);
+    setNewName(group.farmgroupName);
     setShowForm(true);
   };
 
-  // Delete button
   const handleDelete = async (id) => {
-    const user = auth.currentUser;
-    if (!user) return;
+    if (!window.confirm("Are you sure you want to delete this farm group?"))
+      return;
 
-    if (!window.confirm("Are you sure you want to delete this farm group?")) return;
-
-    const groupRef = ref(database, `farmGroups/${user.uid}/${id}`);
-    await remove(groupRef);
-    setFarmGroups(farmGroups.filter((group) => group.id !== id));
+    try {
+      await deleteDoc(doc(db, "farmgroups", id));
+      setFarmGroups(farmGroups.filter((group) => group.id !== id));
+    } catch (error) {
+      console.error("Error deleting farm group:", error);
+    }
   };
 
   return (
     <div className="dashboard">
-      {/* SIDEBAR */}
       <aside className="sidebar">
         <h2 className="logo">
           <span className="italic">Smart</span>AGRI
@@ -119,25 +166,26 @@ export default function CreateFarmGroupPage() {
 
         <div className="profile">
           <div className="avatar"></div>
-          <h4>{adminName.first} {adminName.last}</h4>
+          <h4>
+            {adminName.first || "Loading..."} {adminName.last}
+          </h4>
           <span className="role">Registered Admin</span>
         </div>
 
-        <nav className="menu">
-          <Link to="/dashboard">Dashboard</Link>
-          <Link to="/register-farmer">Register Farmer</Link>
-          <Link to="/farmers">Farmers</Link>
-          <Link to="/soil-status">Soil Moisture Status</Link>
-          <Link to="/notifications">Notification</Link>
-          <Link to="/terms">Terms and Conditions</Link>
-          <Link to="/privacy">Privacy Policy</Link>
-          <Link to="/report">Report</Link>
-        </nav>
+       <nav className="f-menu">
+  <NavLink to="/dashboard">Dashboard</NavLink>
+  <NavLink to="/register-farmer">Register Farmer</NavLink>
+  <NavLink to="/farmers">Farmers</NavLink>
+  <NavLink to="/soil-status">Soil Moisture Status</NavLink>
+  <NavLink to="/notifications">Notification</NavLink>
+ 
+</nav>
 
-        <button className="logout">Logout</button>
+        <button className="logout" onClick={handleLogout}>
+          Logout
+        </button>
       </aside>
 
-      {/* MAIN CONTENT */}
       <main className="main">
         <header className="header">
           <div>
@@ -146,13 +194,15 @@ export default function CreateFarmGroupPage() {
           </div>
 
           <div className="header-right">
-            <button className="farm-group-btn" onClick={() => setShowForm(true)}>
+            <button
+              className="farm-group-btn"
+              onClick={() => setShowForm(true)}
+            >
               + Add Farm Group
             </button>
           </div>
         </header>
 
-        {/* List of farm groups */}
         <div className="farmgroup-list">
           {farmGroups.length === 0 ? (
             <p>No farm groups created yet.</p>
@@ -167,13 +217,27 @@ export default function CreateFarmGroupPage() {
               <tbody>
                 {farmGroups.map((group) => (
                   <tr key={group.id}>
-                    <td>{group.code}</td>
+                    <td>{group.farmgroupCode}</td>
                     <td>
                       <div className="group-name-container">
-                        <span className="group-name-text">{group.name}</span>
+                        <span className="group-name-text">
+                          {group.farmgroupName}
+                        </span>
+
                         <div>
-                          <button className="edit-btn" onClick={() => handleEdit(group)}>Edit</button>
-                          <button className="delete-btn" onClick={() => handleDelete(group.id)}>Delete</button>
+                          <button
+                            className="edit-btn"
+                            onClick={() => handleEdit(group)}
+                          >
+                            Edit
+                          </button>
+
+                          <button
+                            className="delete-btn"
+                            onClick={() => handleDelete(group.id)}
+                          >
+                            Delete
+                          </button>
                         </div>
                       </div>
                     </td>
@@ -184,11 +248,13 @@ export default function CreateFarmGroupPage() {
           )}
         </div>
 
-        {/* Popup form */}
         {showForm && (
           <div className="popup">
             <div className="popup-content">
-              <h3>{editGroup ? "Edit Farm Group" : "Add New Farm Group"}</h3>
+              <h3>
+                {editGroup ? "Edit Farm Group" : "Add New Farm Group"}
+              </h3>
+
               <form onSubmit={handleAddEditFarmGroup}>
                 <input
                   type="text"
@@ -197,6 +263,7 @@ export default function CreateFarmGroupPage() {
                   onChange={(e) => setNewCode(e.target.value)}
                   required
                 />
+
                 <input
                   type="text"
                   placeholder="Farm Group Name"
@@ -204,14 +271,21 @@ export default function CreateFarmGroupPage() {
                   onChange={(e) => setNewName(e.target.value)}
                   required
                 />
+
                 <div className="form-buttons">
                   <button type="submit" className="submit-btn">
                     {editGroup ? "Save" : "Add"}
                   </button>
+
                   <button
                     type="button"
                     className="cancel-btn"
-                    onClick={() => { setShowForm(false); setEditGroup(null); }}
+                    onClick={() => {
+                      setShowForm(false);
+                      setEditGroup(null);
+                      setNewCode("");
+                      setNewName("");
+                    }}
                   >
                     Cancel
                   </button>
