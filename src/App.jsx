@@ -9,14 +9,15 @@ import FarmerPage from "./components/FarmerPage.jsx";
 import RegisterFarmerPage from "./components/RegisterFarmerPage.jsx";
 import CreateFarmGroupPage from "./components/CreateFarmGroupPage.jsx";
 import SoilMoisturePage from "./components/SoilMoisturePage.jsx";
-import NotificationPage from "./components/NotificationPage.jsx"; // ✅ ADD THIS
+import NotificationPage from "./components/NotificationPage.jsx";
+import FarmGroup from "./components/FarmGroup.jsx";
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
 
-        {/* ✅ Landing Page FIRST */}
+        {/* Landing */}
         <Route path="/" element={<LandingPage />} />
 
         {/* Authentication */}
@@ -26,16 +27,17 @@ function App() {
         {/* Dashboard */}
         <Route path="/dashboard" element={<DashboardPage />} />
 
-        {/* Sidebar Navigation Pages */}
+        {/* Sidebar Pages */}
         <Route path="/farmers" element={<FarmerPage />} />
         <Route path="/register-farmer" element={<RegisterFarmerPage />} />
         <Route path="/create-farm-group" element={<CreateFarmGroupPage />} />
         <Route path="/soil-status" element={<SoilMoisturePage />} />
+        <Route path="/farm-group" element={<FarmGroup />} />
 
-        {/* ✅ NEW NOTIFICATION PAGE */}
+        {/* Notification */}
         <Route path="/notifications" element={<NotificationPage />} />
 
-        {/* Unknown routes → Landing page */}
+        {/* Unknown route → redirect */}
         <Route path="*" element={<Navigate to="/" replace />} />
 
       </Routes>

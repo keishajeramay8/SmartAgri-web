@@ -1,105 +1,190 @@
 /* RESET */
-* { box-sizing: border-box; margin:0; padding:0; }
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
 html, body {
-  margin:0;
-  padding:0;
-  width:100vw;
-  height:100vh;
-  overflow-x:hidden;
-  background:#F9F6EE;
+  width: 100vw;
+  height: 100vh;
+  overflow-x: hidden;
+  background: #F9F6EE;
   font-family: Arial, Helvetica, sans-serif;
 }
 
 /* LAYOUT */
-.f-dashboard { display:flex; width:100vw; height:100vh; background:#f6f5ef; }
+.f-dashboard {
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+  background: #f6f5ef;
+}
 
 /* SIDEBAR */
 .f-sidebar {
-  width:240px;
-  background:#fff;
-  padding:16px;
-  border-right:1px solid #e2e2e2;
-  display:flex;
-  flex-direction:column;
+  width: 240px;
+  background: white;
+  padding: 16px;
+  border-right: 1px solid #e2e2e2;
+  display: flex;
+  flex-direction: column;
 }
 
 /* LOGO */
-.f-logo { text-align:center; margin-bottom:25px; font-size:24px; font-weight:700; color:#f39c12; }
-.f-logo .smart { font-style:italic; font-weight:400; }
+.f-logo {
+  text-align: center;
+  margin-bottom: 25px;
+  font-size: 24px;
+  font-weight: 700;
+  color: #f39c12;
+}
 
-/* PROFILE - FIXED HEIGHT + BORDER */
+.f-logo .smart {
+  font-style: italic;
+  font-weight: 400;
+}
+
+/* PROFILE */
 .f-profile {
-  text-align:center;
-  margin-bottom:16px;
-  padding-bottom:10px;
-  min-height:120px;          /* locks height to prevent jumping */
-  border-bottom:1px solid #e2e2e2; /* separator line */
+  text-align: center;
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+  min-height: 120px;
+  border-bottom: 1px solid #e2e2e2;
 }
-.f-avatar { width:70px; height:70px; background:#ddd; border-radius:50%; margin:0 auto 10px; }
+
+.f-avatar {
+  width: 70px;
+  height: 70px;
+  background: #ddd;
+  border-radius: 50%;
+  margin: 0 auto 10px;
+}
+
 .f-profile h4 {
-  margin:10px 0 3px;
-  font-size:16px;
-  min-height:20px;          /* reserve space for name to prevent jump */
-  overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap;
+  margin: 10px 0 3px;
+  font-size: 16px;
+  min-height: 20px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.f-profile p { font-size:12px; color:green; }
+
+.f-profile p {
+  font-size: 12px;
+  color: green;
+}
 
 /* MENU */
 .f-menu a {
-  text-decoration:none;
-  padding:10px;
-  border-radius:6px;
-  color:#333;
-  display:block;
-  font-size:16px;
-  font-weight:normal;       /* keep normal */
-  border-left:3px solid transparent; /* reserve space to prevent jump */
+  text-decoration: none;
+  padding: 10px;
+  border-radius: 6px;
+  color: #333;
+  display: block;
+  font-size: 16px;
+  border-left: 3px solid transparent;
 }
-.f-menu a:hover, .f-menu a.active {
-  background:#e8f3e8;
-  border-left:3px solid transparent; /* keeps layout stable */
+
+.f-menu a:hover,
+.f-menu a.active {
+  background: #e8f3e8;
 }
 
 /* LOGOUT */
-.f-logout { margin-top:auto; padding:10px; border:none; background:#ff5c5c; color:white; border-radius:6px; cursor:pointer; }
+.f-logout {
+  margin-top: auto;
+  padding: 10px;
+  border: none;
+  background: #ff5c5c;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+}
 
-/* MAIN */
-.f-main { flex:1; padding:20px; overflow-y:auto; }
+/* MAIN CONTENT */
+.f-main {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+}
 
 /* HEADER */
-.f-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
-.f-header h1 { font-size:20px; letter-spacing:1px; }
+.f-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.f-header h1 {
+  font-size: 20px;
+  letter-spacing: 1px;
+}
 
 /* TABLE */
-.f-table-section { padding:0 20px 20px 20px; }
-.f-table-header, .f-row { display:grid; grid-template-columns: 1fr 1fr 2fr 100px; align-items:center; padding:10px 0; column-gap:10px; }
-.f-table-header { font-weight:bold; border-bottom:2px solid #ddd; position:sticky; top:0; background:#F9F6EE; }
-.f-row { border-bottom:1px solid #eee; font-size:14px; }
+.f-table-section {
+  padding: 0 20px 20px 20px;
+}
+
+.f-table-header,
+.f-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 2fr 120px;
+  align-items: center;
+  padding: 10px 0;
+  column-gap: 10px;
+}
+
+.f-table-header {
+  font-weight: bold;
+  border-bottom: 2px solid #ddd;
+  position: sticky;
+  top: 0;
+  background: #F9F6EE;
+}
+
+.f-row {
+  border-bottom: 1px solid #eee;
+  font-size: 14px;
+}
 
 /* ACTION BUTTONS */
-.f-actions { display:flex; gap:10px; justify-content:flex-end; }
-.f-actions button.delete-icon {
-  width:32px;
-  height:32px;
-  border:none;
-  background:#e53e3e;
-  color:white;
-  font-size:16px;
-  border-radius:4px;
-  cursor:pointer;
-  display:flex;
-  align-items:center;
-  justify-content:center;
+.f-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+/* EDIT BUTTON */
+.edit-icon {
+  padding: 6px 12px;
+  border: none;
+  background: #3182ce;
+  color: white;
+  font-size: 14px;
+  border-radius: 4px;
+  cursor: pointer;
   transition: background 0.3s;
 }
 
-/* Ensure icons are visible */
-.f-actions button.delete-icon svg {
-  width: 16px;
-  height: 16px;
-  display: block;
-  fill: currentColor;
+.edit-icon:hover {
+  background: #2b6cb0;
+}
+
+/* REMOVE BUTTON ⭐ COLOR = #e53e3e */
+.remove-btn {
+  padding: 6px 12px;
+  border: none;
+  background: #e53e3e;
+  color: white;
+  font-size: 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.remove-btn:hover {
+  background: #c53030;
 }

@@ -111,6 +111,7 @@ export default function NotificationPage() {
           <Link to="/farmers">Farmers</Link>
           <Link to="/soil-status">Soil Moisture Status</Link>
           <Link to="/notifications" className="active">Notification</Link>
+          <Link to="/farm-group">Farm Group</Link>
         </nav>
 
         <button className="logout" onClick={handleLogout}>

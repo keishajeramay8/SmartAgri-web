@@ -72,6 +72,7 @@ export default function SoilMoisturePage() {
           <NavLink to="/farmers">Farmers</NavLink>
           <NavLink to="/soil-status" className="active">Soil Moisture Status</NavLink>
           <NavLink to="/notifications">Notification</NavLink>
+          <NavLink to="/farm-group">Farm Group</NavLink>
          
         </nav>
 
