@@ -10,9 +10,10 @@ import {
   query,
   where,
   getDocs,
-  updateDoc
 } from "firebase/firestore";
 import axios from "axios";
+import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
+import "react-circular-progressbar/dist/styles.css";
 import "./DashboardPage.css";
 
 const WEATHER_KEY = "17a5aa9601f1e26815cc0cd44578658e";
@@ -32,6 +33,7 @@ export default function DashboardPage() {
   const [farmGroupName, setFarmGroupName] = useState("No Farm Group Selected");
   const [deviceId, setDeviceId] = useState("No Device Registered");
 
+  const [latestReading, setLatestReading] = useState(null);
   const [loadingWeather, setLoadingWeather] = useState(true);
 
   // Logout
@@ -63,9 +65,7 @@ export default function DashboardPage() {
         );
 
         const snapshot = await getDocs(farmQuery);
-
-        setFarmGroups(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-
+        setFarmGroups(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
       } catch (err) {
         console.error(err);
       }
@@ -80,6 +80,7 @@ export default function DashboardPage() {
       if (!selectedFarmGroup) {
         setFarmGroupName("No Farm Group Selected");
         setDeviceId("No Device Registered");
+        setLatestReading(null);
         return;
       }
 
@@ -99,6 +100,37 @@ export default function DashboardPage() {
     fetchSelectedFarmGroupData();
   }, [selectedFarmGroup]);
 
+  // Fetch latest reading from Firestore
+  useEffect(() => {
+    const fetchLatestReading = async () => {
+      if (!deviceId || deviceId === "No Device Registered") return;
+
+      try {
+        const readingsCol = collection(db, "devices", deviceId, "readings");
+        const readingsSnap = await getDocs(query(readingsCol));
+
+        if (!readingsSnap.empty) {
+          const sorted = readingsSnap.docs
+            .map((doc) => ({ id: doc.id, ...doc.data() }))
+            .sort(
+              (a, b) =>
+                new Date(b.timestamp?.timestampValue || 0) -
+                new Date(a.timestamp?.timestampValue || 0)
+            );
+          setLatestReading(sorted[0]);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchLatestReading();
+
+    // Refresh every 30 seconds
+    const interval = setInterval(fetchLatestReading, 30000);
+    return () => clearInterval(interval);
+  }, [deviceId]);
+
   // Handle FarmGroup Selection
   const handleSelectFarmGroup = async (farmId, farmName) => {
     if (!farmId) return;
@@ -108,7 +140,7 @@ export default function DashboardPage() {
     const user = auth.currentUser;
     if (!user) return;
 
-    await updateDoc(doc(db, "users", user.uid), { selectedFarmGroupId: farmId });
+    await doc(db, "users", user.uid).update({ selectedFarmGroupId: farmId });
   };
 
   // Weather Fetch
@@ -117,9 +149,12 @@ export default function DashboardPage() {
       if (!location.lat || !location.lon) return;
 
       try {
-        const res = await axios.get("https://api.openweathermap.org/data/2.5/weather", {
-          params: { lat: location.lat, lon: location.lon, appid: WEATHER_KEY, units: "metric" }
-        });
+        const res = await axios.get(
+          "https://api.openweathermap.org/data/2.5/weather",
+          {
+            params: { lat: location.lat, lon: location.lon, appid: WEATHER_KEY, units: "metric" },
+          }
+        );
         setWeather(res.data);
       } catch (err) {
         console.error(err);
@@ -139,19 +174,28 @@ export default function DashboardPage() {
       const nowUTC = new Date().getTime() + new Date().getTimezoneOffset() * 60000;
       const localTime = new Date(nowUTC + weather.timezone * 1000);
 
-      setCurrentDate(localTime.toLocaleDateString(undefined, {
-        weekday: "long", year: "numeric", month: "long", day: "numeric"
-      }));
-      setCurrentTime(localTime.toLocaleTimeString(undefined, {
-        hour: "2-digit", minute: "2-digit", second: "2-digit"
-      }));
+      setCurrentDate(
+        localTime.toLocaleDateString(undefined, {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        })
+      );
+      setCurrentTime(
+        localTime.toLocaleTimeString(undefined, {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        })
+      );
     }, 1000);
 
     return () => clearInterval(interval);
   }, [weather]);
 
   return (
-   <div className="dashboard">
+    <div className="dashboard">
       {/* SIDEBAR */}
       <aside className="sidebar">
         <h2 className="logo">
@@ -166,7 +210,6 @@ export default function DashboardPage() {
           <span className="role">Registered Admin</span>
         </div>
 
-
         <nav className="f-menu">
           <NavLink to="/dashboard">Dashboard</NavLink>
           <NavLink to="/register-farmer">Register Farmer</NavLink>
@@ -177,11 +220,12 @@ export default function DashboardPage() {
           <hr />
         </nav>
 
-        <button className="logout" onClick={handleLogout}>Logout</button>
+        <button className="logout" onClick={handleLogout}>
+          Logout
+        </button>
       </aside>
 
       <main className="main">
-
         <header className="header">
           <div>
             <h1>DASHBOARD</h1>
@@ -191,8 +235,6 @@ export default function DashboardPage() {
 
         {/* Cards */}
         <div className="cards">
-
-          {/* Farm Group Card with Dropdown */}
           <div className="card">
             <p>Farm Group</p>
             <h2>{farmGroupName}</h2>
@@ -201,7 +243,8 @@ export default function DashboardPage() {
               value={selectedFarmGroup}
               onChange={(e) => {
                 const farmId = e.target.value;
-                const farmName = farmGroups.find(f => f.id === farmId)?.farmgroupName || "";
+                const farmName =
+                  farmGroups.find((f) => f.id === farmId)?.farmgroupName || "";
                 handleSelectFarmGroup(farmId, farmName);
               }}
               style={{
@@ -209,25 +252,47 @@ export default function DashboardPage() {
                 padding: "6px",
                 marginTop: "10px",
                 borderRadius: "6px",
-                border: "1px solid #ddd"
+                border: "1px solid #ddd",
               }}
             >
               <option value="">Select Farm Group</option>
-              {farmGroups.map(f => (
-                <option key={f.id} value={f.id}>{f.farmgroupName}</option>
+              {farmGroups.map((f) => (
+                <option key={f.id} value={f.id}>
+                  {f.farmgroupName}
+                </option>
               ))}
             </select>
           </div>
 
           <StatCard title="Device ID" value={deviceId} />
-          <StatCard title="Avg Moisture" value="20%" />
-          <StatCard title="Water Used Today" value="45 L" />
-
+          <StatCard
+            title="Avg Moisture"
+            value={latestReading ? latestReading.moistureValue?.integerValue + "%" : "0%"}
+          />
+          <StatCard
+            title="Moisture Status"
+            value={
+              latestReading
+                ? latestReading.moistureValue?.integerValue > 30
+                  ? "DRY"
+                  : "OK"
+                : "N/A"
+            }
+          />
+          <StatCard
+            title="Pump Status"
+            value={
+              latestReading
+                ? latestReading.irrigationTriggered?.booleanValue
+                  ? "ON"
+                  : "OFF"
+                : "OFF"
+            }
+          />
         </div>
 
         {/* Weather + Soil Moisture */}
         <div className="row">
-
           <div className="weather">
             <h3>Current Weather</h3>
             {loadingWeather ? (
@@ -247,17 +312,55 @@ export default function DashboardPage() {
                   style={{ width: "180px" }}
                 />
               </div>
-            ) : <p>No weather data</p>}
+            ) : (
+              <p>No weather data</p>
+            )}
           </div>
 
           <div className="soil">
             <h3>Soil Moisture</h3>
-            <p><strong>Farm Group:</strong> {farmGroupName}</p>
-            <p><strong>Device ID:</strong> {deviceId}</p>
+            <p>
+              <strong>Farm Group:</strong> {farmGroupName}
+            </p>
+            <p>
+              <strong>Device ID:</strong> {deviceId}
+            </p>
+
+            {/* Circular Gauge */}
+            <div style={{ width: 150, margin: "20px auto" }}>
+              <CircularProgressbar
+                value={latestReading ? latestReading.moistureValue?.integerValue : 0}
+                maxValue={100}
+                text={`${latestReading ? latestReading.moistureValue?.integerValue : 0}%`}
+                styles={buildStyles({
+                  textColor: "#333",
+                  pathColor:
+                    latestReading && latestReading.moistureValue?.integerValue > 30
+                      ? "#ff4d4f" // red if dry
+                      : "#4caf50", // green if okay
+                  trailColor: "#d6d6d6",
+                })}
+              />
+            </div>
+
+            <p>
+              <strong>Moisture Status:</strong>{" "}
+              {latestReading
+                ? latestReading.moistureValue?.integerValue > 30
+                  ? "DRY"
+                  : "OK"
+                : "N/A"}
+            </p>
+            <p>
+              <strong>Pump Status:</strong>{" "}
+              {latestReading
+                ? latestReading.irrigationTriggered?.booleanValue
+                  ? "ON"
+                  : "OFF"
+                : "OFF"}
+            </p>
           </div>
-
         </div>
-
       </main>
     </div>
   );

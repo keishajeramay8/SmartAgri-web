@@ -27,13 +27,19 @@ export default function CreateFarmGroupPage() {
   const [editGroup, setEditGroup] = useState(null);
   const [adminName, setAdminName] = useState({ first: "", last: "" });
 
+  // New states for popup
+  const [viewMembersGroup, setViewMembersGroup] = useState(null);
+  const [viewDeviceGroup, setViewDeviceGroup] = useState(null);
+  const [members, setMembers] = useState([]);
+  const [device, setDevice] = useState({ deviceId: "", deviceName: "" });
+
   // ✅ Logout
   const handleLogout = async () => {
     await signOut(auth);
     navigate("/login");
   };
 
-  // ✅ Fetch Admin Name (CORRECT VERSION)
+  // ✅ Fetch Admin Name
   useEffect(() => {
     const fetchAdminName = async () => {
       const user = auth.currentUser;
@@ -157,6 +163,46 @@ export default function CreateFarmGroupPage() {
     }
   };
 
+  // ✅ View Members of a Farm Group
+  const handleViewMembers = async (group) => {
+    try {
+      const membersCol = collection(db, "farmers"); // Assuming all farmers
+      const q = query(membersCol, where("farmGroupId", "==", group.id));
+      const snapshot = await getDocs(q);
+
+      const list = snapshot.docs.map((docSnap) => ({
+        id: docSnap.id,
+        ...docSnap.data()
+      }));
+
+      setMembers(list);
+      setViewMembersGroup(group);
+    } catch (error) {
+      console.error("Error fetching members:", error);
+    }
+  };
+
+  const handleViewDevice = async (group) => {
+    try {
+      if (!group.deviceId) {
+        setDevice({ deviceId: "No Device", deviceName: "N/A" });
+      } else {
+        const deviceDoc = await getDoc(doc(db, "devices", group.deviceId));
+        if (deviceDoc.exists()) {
+          setDevice({
+            deviceId: deviceDoc.id,
+            deviceName: deviceDoc.data().deviceName || "Unnamed Device"
+          });
+        } else {
+          setDevice({ deviceId: group.deviceId, deviceName: "Unknown Device" });
+        }
+      }
+      setViewDeviceGroup(group);
+    } catch (error) {
+      console.error("Error fetching device:", error);
+    }
+  };
+
   return (
     <div className="dashboard">
       <aside className="sidebar">
@@ -178,7 +224,6 @@ export default function CreateFarmGroupPage() {
   <NavLink to="/farmers">Farmers</NavLink>
   <NavLink to="/soil-status">Soil Moisture Status</NavLink>
   <NavLink to="/notifications">Notification</NavLink>
- 
 </nav>
 
         <button className="logout" onClick={handleLogout}>
@@ -212,34 +257,19 @@ export default function CreateFarmGroupPage() {
                 <tr>
                   <th>Farm Group Code</th>
                   <th>Farm Group Name</th>
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {farmGroups.map((group) => (
                   <tr key={group.id}>
                     <td>{group.farmgroupCode}</td>
+                    <td>{group.farmgroupName}</td>
                     <td>
-                      <div className="group-name-container">
-                        <span className="group-name-text">
-                          {group.farmgroupName}
-                        </span>
-
-                        <div>
-                          <button
-                            className="edit-btn"
-                            onClick={() => handleEdit(group)}
-                          >
-                            Edit
-                          </button>
-
-                          <button
-                            className="delete-btn"
-                            onClick={() => handleDelete(group.id)}
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </div>
+                      <button className="edit-btn" onClick={() => handleEdit(group)}>Edit</button>
+                      <button className="delete-btn" onClick={() => handleDelete(group.id)}>Delete</button>
+                      <button className="view-btn" onClick={() => handleViewMembers(group)}>View Members</button>
+                      <button className="view-btn" onClick={() => handleViewDevice(group)}>View Device</button>
                     </td>
                   </tr>
                 ))}
@@ -248,12 +278,11 @@ export default function CreateFarmGroupPage() {
           )}
         </div>
 
+        {/* Add/Edit Farm Group Form */}
         {showForm && (
           <div className="popup">
             <div className="popup-content">
-              <h3>
-                {editGroup ? "Edit Farm Group" : "Add New Farm Group"}
-              </h3>
+              <h3>{editGroup ? "Edit Farm Group" : "Add New Farm Group"}</h3>
 
               <form onSubmit={handleAddEditFarmGroup}>
                 <input
@@ -263,7 +292,6 @@ export default function CreateFarmGroupPage() {
                   onChange={(e) => setNewCode(e.target.value)}
                   required
                 />
-
                 <input
                   type="text"
                   placeholder="Farm Group Name"
@@ -273,10 +301,7 @@ export default function CreateFarmGroupPage() {
                 />
 
                 <div className="form-buttons">
-                  <button type="submit" className="submit-btn">
-                    {editGroup ? "Save" : "Add"}
-                  </button>
-
+                  <button type="submit" className="submit-btn">{editGroup ? "Save" : "Add"}</button>
                   <button
                     type="button"
                     className="cancel-btn"
@@ -294,6 +319,38 @@ export default function CreateFarmGroupPage() {
             </div>
           </div>
         )}
+
+        {/* Members Popup */}
+        {viewMembersGroup && (
+          <div className="popup">
+            <div className="popup-content">
+              <h3>Members of {viewMembersGroup.farmgroupName}</h3>
+              {members.length === 0 ? (
+                <p>No members in this farm group.</p>
+              ) : (
+                <ul>
+                  {members.map((m) => (
+                    <li key={m.id}>{m.firstName} {m.lastName}</li>
+                  ))}
+                </ul>
+              )}
+              <button className="cancel-btn" onClick={() => setViewMembersGroup(null)}>Close</button>
+            </div>
+          </div>
+        )}
+
+        {/* Device Popup */}
+        {viewDeviceGroup && (
+          <div className="popup">
+            <div className="popup-content">
+              <h3>Device for {viewDeviceGroup.farmgroupName}</h3>
+              <p><strong>Device Name:</strong> {device.deviceName}</p>
+              <p><strong>Device ID:</strong> {device.deviceId}</p>
+              <button className="cancel-btn" onClick={() => setViewDeviceGroup(null)}>Close</button>
+            </div>
+          </div>
+        )}
+
       </main>
     </div>
   );
