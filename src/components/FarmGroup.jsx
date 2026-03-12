@@ -1,6 +1,7 @@
+// src/components/FarmGroup.jsx
 import React, { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { FaTrash } from "react-icons/fa";
+import { FaTrash, FaUsers, FaMicrochip } from "react-icons/fa";
 import { auth, db } from "../firebase";
 
 import {
@@ -12,7 +13,8 @@ import {
   deleteDoc,
   doc,
   updateDoc,
-  getDoc
+  getDoc,
+  onSnapshot,
 } from "firebase/firestore";
 
 import { signOut } from "firebase/auth";
@@ -23,11 +25,9 @@ export default function FarmGroup() {
   const navigate = useNavigate();
 
   const [farmGroups, setFarmGroups] = useState([]);
-
   const [userName, setUserName] = useState({ first: "", last: "" });
 
   const [showCreateModal, setShowCreateModal] = useState(false);
-
   const [farmName, setFarmName] = useState("");
   const [farmCode, setFarmCode] = useState("");
 
@@ -35,17 +35,16 @@ export default function FarmGroup() {
   const [members, setMembers] = useState([]);
   const [groupTitle, setGroupTitle] = useState("");
 
-  // ===============================
-  // Logout
-  // ===============================
+  const [showDeviceModal, setShowDeviceModal] = useState(false);
+  const [devices, setDevices] = useState([]);
+
+  // LOGOUT
   const handleLogout = async () => {
     await signOut(auth);
     navigate("/login");
   };
 
-  // ===============================
-  // Fetch User Info
-  // ===============================
+  // FETCH USER
   useEffect(() => {
 
     const fetchUser = async () => {
@@ -53,34 +52,28 @@ export default function FarmGroup() {
       const user = auth.currentUser;
       if (!user) return;
 
-      try {
+      const userRef = doc(db, "users", user.uid);
+      const userSnap = await getDoc(userRef);
 
-        const snap = await getDocs(
-          query(collection(db, "users"), where("uid", "==", user.uid))
-        );
+      if (userSnap.exists()) {
 
-        if (!snap.empty) {
-          const data = snap.docs[0].data();
+        const data = userSnap.data();
 
-          setUserName({
-            first: data.firstName || "",
-            last: data.lastName || ""
-          });
-        }
+        setUserName({
+          first: data.firstName || "",
+          last: data.lastName || "",
+        });
 
-      } catch (err) {
-        console.error(err);
       }
+
     };
 
     fetchUser();
 
   }, []);
 
-  // ===============================
-  // Fetch FarmGroups
-  // ===============================
-  const fetchFarmGroups = async () => {
+  // REALTIME FARM GROUPS
+  useEffect(() => {
 
     const user = auth.currentUser;
     if (!user) return;
@@ -90,27 +83,25 @@ export default function FarmGroup() {
       where("createdBy", "==", user.uid)
     );
 
-    const snapshot = await getDocs(q);
+    const unsubscribe = onSnapshot(q, (snapshot) => {
 
-    setFarmGroups(
-      snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }))
-    );
-  };
+      const groups = snapshot.docs.map((docSnap) => ({
+        id: docSnap.id,
+        ...docSnap.data(),
+      }));
 
-  useEffect(() => {
-    fetchFarmGroups();
+      setFarmGroups(groups);
+
+    });
+
+    return () => unsubscribe();
+
   }, []);
 
-  // ===============================
-  // Create Farm Group
-  // ===============================
+  // CREATE FARM GROUP
   const handleAddFarmGroup = async () => {
 
     const user = auth.currentUser;
-    if (!user) return;
 
     if (!farmName || !farmCode) {
       alert("Please fill all fields");
@@ -119,109 +110,105 @@ export default function FarmGroup() {
 
     const codeQuery = query(
       collection(db, "farmgroups"),
-      where("farmgroupCode", "==", farmCode)
+      where("farmgroupId", "==", farmCode)
     );
 
     const codeSnap = await getDocs(codeQuery);
 
     if (!codeSnap.empty) {
-      alert("Farm Group Code already exists!");
+      alert("Farm Group Code already exists");
       return;
     }
 
     await addDoc(collection(db, "farmgroups"), {
       farmgroupName: farmName,
-      farmgroupCode: farmCode,
+      farmgroupId: farmCode,
       createdBy: user.uid,
-      createdAt: new Date()
+      createdAt: new Date(),
     });
 
     setFarmName("");
     setFarmCode("");
     setShowCreateModal(false);
 
-    fetchFarmGroups();
   };
 
-  // ===============================
-  // Edit FarmGroup
-  // ===============================
+  // EDIT
   const handleEdit = async (farm) => {
 
-    const newName = prompt(
-      "Edit Farm Group Name:",
-      farm.farmgroupName
-    );
+    const newName = prompt("Edit Farm Group Name", farm.farmgroupName);
 
     if (!newName) return;
 
-    await updateDoc(
-      doc(db, "farmgroups", farm.id),
-      { farmgroupName: newName }
-    );
+    await updateDoc(doc(db, "farmgroups", farm.id), {
+      farmgroupName: newName,
+    });
 
-    fetchFarmGroups();
   };
 
-  // ===============================
-  // Delete FarmGroup
-  // ===============================
+  // DELETE
   const handleDelete = async (id) => {
 
     if (!window.confirm("Delete this farm group?")) return;
 
     await deleteDoc(doc(db, "farmgroups", id));
 
-    fetchFarmGroups();
   };
 
-  // ===============================
-  // View Members
-  // ===============================
+  // VIEW MEMBERS
   const handleViewMembers = async (group) => {
 
     setGroupTitle(group.farmgroupName);
     setShowMembersModal(true);
 
-    try {
+    const membersRef = collection(db, "farmgroups", group.id, "members");
+    const snapshot = await getDocs(membersRef);
 
-      const membersRef = collection(
-        db,
-        "farmgroups",
-        group.id,
-        "members"
-      );
+    const list = await Promise.all(
+      snapshot.docs.map(async (docSnap) => {
 
-      const snapshot = await getDocs(membersRef);
+        const farmerUid = docSnap.id;
+        const farmerSnap = await getDoc(doc(db, "users", farmerUid));
 
-      const list = await Promise.all(
-        snapshot.docs.map(async (docSnap) => {
+        return farmerSnap.exists() ? farmerSnap.data() : null;
 
-          const farmerUid = docSnap.id;
+      })
+    );
 
-          const farmerSnap = await getDoc(
-            doc(db, "users", farmerUid)
-          );
+    setMembers(list.filter(Boolean));
 
-          return farmerSnap.exists()
-            ? farmerSnap.data()
-            : null;
-        })
-      );
-
-      setMembers(list.filter(Boolean));
-
-    } catch (error) {
-      console.error(error);
-    }
   };
 
-  // ===============================
-  // UI
-  // ===============================
+  // VIEW DEVICES
+  const handleViewDevice = async (group) => {
+
+    setGroupTitle(group.farmgroupName);
+
+    const devicesRef = collection(db, "farmgroups", group.id, "devices");
+    const snapshot = await getDocs(devicesRef);
+
+    const deviceList = snapshot.docs.map((docSnap) => {
+
+      const data = docSnap.data();
+
+      return {
+        id: docSnap.id,
+        deviceId: data.deviceId || docSnap.id,
+        deviceName: data.deviceName || "Unnamed Device",
+      };
+
+    });
+
+    setDevices(deviceList);
+    setShowDeviceModal(true);
+
+  };
+
   return (
+
     <div className="f-dashboard">
 
+      {/* SIDEBAR */}
       <aside className="f-sidebar">
 
         <h2 className="f-logo">
@@ -230,7 +217,13 @@ export default function FarmGroup() {
 
         <div className="f-profile">
           <div className="f-avatar"></div>
-          <h4>{userName.first} {userName.last}</h4>
+
+          <h4>
+            {userName.first
+              ? `${userName.first} ${userName.last}`
+              : "Loading..."}
+          </h4>
+
           <p>Registered Admin</p>
         </div>
 
@@ -238,11 +231,12 @@ export default function FarmGroup() {
           <NavLink to="/dashboard">Dashboard</NavLink>
           <NavLink to="/register-farmer">Register Farmer</NavLink>
           <NavLink to="/farmers">Farmers</NavLink>
-          <NavLink to="/soil-status">Soil Moisture Status</NavLink>
           <NavLink to="/notifications">Notification</NavLink>
           <NavLink to="/farm-group" className="active">
             Farm Group
           </NavLink>
+           <hr />
+
         </nav>
 
         <button className="f-logout" onClick={handleLogout}>
@@ -251,13 +245,13 @@ export default function FarmGroup() {
 
       </aside>
 
+      {/* MAIN */}
       <main className="f-main">
 
         <header className="f-header">
-          <h1>FARM GROUP MANAGEMENT</h1>
+          <h1>Farm Group Management</h1>
         </header>
 
-        {/* Create Button */}
         <button
           className="create-farm-btn"
           onClick={() => setShowCreateModal(true)}
@@ -265,33 +259,46 @@ export default function FarmGroup() {
           + Create Farm Group
         </button>
 
-        {/* Farm Cards */}
         <section className="farm-card-container">
 
           <div className="farm-card-grid">
 
-            {farmGroups.map(f => (
+            {farmGroups.map((f) => (
 
               <div className="farm-card" key={f.id}>
 
-                <h3>{f.farmgroupName}</h3>
+                <div className="farm-title-row">
 
-                <p className="farm-code">
-                  Code: {f.farmgroupCode}
-                </p>
+                  <h3>{f.farmgroupName}</h3>
+
+                  <span className="farm-code-badge">
+                    Code: {f.farmgroupId}
+                  </span>
+
+                </div>
 
                 <div className="farm-card-actions">
 
                   <button
                     className="view-btn"
                     onClick={() => handleViewMembers(f)}
+                    type="button"
                   >
-                    View Members
+                    <FaUsers /> Members
+                  </button>
+
+                  <button
+                    className="device-btn"
+                    onClick={() => handleViewDevice(f)}
+                    type="button"
+                  >
+                    <FaMicrochip /> Devices
                   </button>
 
                   <button
                     className="edit-btn"
                     onClick={() => handleEdit(f)}
+                    type="button"
                   >
                     Edit
                   </button>
@@ -299,6 +306,7 @@ export default function FarmGroup() {
                   <button
                     className="delete-btn"
                     onClick={() => handleDelete(f.id)}
+                    type="button"
                   >
                     <FaTrash />
                   </button>
@@ -315,49 +323,69 @@ export default function FarmGroup() {
 
       </main>
 
-      {/* CREATE MODAL */}
-      {showCreateModal && (
+      {/* MEMBERS MODAL */}
+      {showMembersModal && (
         <div className="modal-overlay">
-
           <div className="modal-box">
 
-            <h3>Create Farm Group</h3>
+            <h3>{groupTitle} Members</h3>
 
-            <input
-              placeholder="Farm Group Name"
-              value={farmName}
-              onChange={(e) => setFarmName(e.target.value)}
-            />
+            <div className="member-list">
 
-            <input
-              placeholder="Farm Group Code"
-              value={farmCode}
-              onChange={(e) => setFarmCode(e.target.value)}
-            />
+              {members.length === 0 && <p>No members found</p>}
 
-            <div className="modal-actions">
-
-              <button
-                className="view-btn"
-                onClick={handleAddFarmGroup}
-              >
-                Create
-              </button>
-
-              <button
-                className="modal-close-btn"
-                onClick={() => setShowCreateModal(false)}
-              >
-                Cancel
-              </button>
+              {members.map((m, i) => (
+                <div key={i} className="member-card">
+                  {m.firstName} {m.lastName}
+                </div>
+              ))}
 
             </div>
 
-          </div>
+            <button
+              className="modal-close-btn"
+              onClick={() => setShowMembersModal(false)}
+            >
+              Close
+            </button>
 
+          </div>
+        </div>
+      )}
+
+      {/* DEVICES MODAL */}
+      {showDeviceModal && (
+        <div className="modal-overlay">
+          <div className="modal-box">
+
+            <h3>{groupTitle} Devices</h3>
+
+            <div className="device-list">
+
+              {devices.length === 0 && <p>No devices found</p>}
+
+              {devices.map((d) => (
+                <div key={d.id} className="device-card">
+                  <h4>{d.deviceName}</h4>
+                  <p>ID: {d.deviceId}</p>
+                </div>
+              ))}
+
+            </div>
+
+            <button
+              className="modal-close-btn"
+              onClick={() => setShowDeviceModal(false)}
+            >
+              Close
+            </button>
+
+          </div>
         </div>
       )}
 
     </div>
+
   );
+
 }

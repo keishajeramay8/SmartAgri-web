@@ -1,4 +1,5 @@
 // src/components/NotificationPage.jsx
+
 import React, { useEffect, useState } from "react";
 import { auth, db } from "../firebase";
 import {
@@ -11,16 +12,17 @@ import {
   doc,
   getDoc
 } from "firebase/firestore";
-import { Link, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { signOut } from "firebase/auth";
-import "./NotificationPage.css";
 
 export default function NotificationPage() {
+
   const navigate = useNavigate();
+
   const [notifications, setNotifications] = useState([]);
   const [userName, setUserName] = useState({ first: "", last: "" });
 
-  // ✅ Logout function
+  // Logout
   const handleLogout = async () => {
     try {
       await signOut(auth);
@@ -30,34 +32,45 @@ export default function NotificationPage() {
     }
   };
 
-  // ✅ Fetch logged-in admin's name from Firestore
+  // Fetch admin name
   useEffect(() => {
+
     const fetchUserName = async () => {
+
       const user = auth.currentUser;
       if (!user) return;
 
       try {
+
         const userDocRef = doc(db, "users", user.uid);
         const userSnap = await getDoc(userDocRef);
+
         if (userSnap.exists()) {
+
           const data = userSnap.data();
+
           setUserName({
             first: data.firstName || "",
             last: data.lastName || "",
           });
-        } else {
-          console.warn("User document not found in Firestore");
+
         }
+
       } catch (err) {
-        console.error("Error fetching user data from Firestore:", err);
+
+        console.error("Error fetching user data:", err);
+
       }
+
     };
 
     fetchUserName();
+
   }, []);
 
-  // ✅ Real-time Notifications
+  // Real-time notifications
   useEffect(() => {
+
     const user = auth.currentUser;
     if (!user) return;
 
@@ -68,91 +81,127 @@ export default function NotificationPage() {
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
+
       const list = snapshot.docs.map((docSnap) => ({
         id: docSnap.id,
         ...docSnap.data(),
       }));
+
       setNotifications(list);
+
     });
 
     return () => unsubscribe();
+
   }, []);
 
-  // ✅ Mark notification as read
+  // Mark as read
   const markAsRead = async (id) => {
+
     try {
+
       await updateDoc(doc(db, "notifications", id), {
         isRead: true,
       });
+
     } catch (error) {
+
       console.error("Error marking notification as read:", error);
+
     }
+
   };
 
   return (
-    <div className="dashboard">
+
+    <div className="rf-dashboard">
+
       {/* SIDEBAR */}
-      <aside className="sidebar">
-        <h2 className="logo">
-          <span className="italic">Smart</span>AGRI
+      <aside className="rf-sidebar">
+
+        <h2 className="rf-logo">
+          <span className="smart">Smart</span>AGRI
         </h2>
 
-        <div className="profile">
-          <div className="avatar"></div>
+        <div className="rf-profile">
+
+          <div className="rf-avatar"></div>
+
           <h4>
             {userName.first || "Loading..."} {userName.last}
           </h4>
-          <span className="role">Registered Admin</span>
+
+          <p>Registered Admin</p>
+
         </div>
 
-        <nav className="menu">
-          <Link to="/dashboard">Dashboard</Link>
-          <Link to="/register-farmer">Register Farmer</Link>
-          <Link to="/farmers">Farmers</Link>
-          <Link to="/soil-status">Soil Moisture Status</Link>
-          <Link to="/notifications" className="active">Notification</Link>
-          <Link to="/farm-group">Farm Group</Link>
+        <nav className="rf-menu">
+          <NavLink to="/dashboard">Dashboard</NavLink>
+          <NavLink to="/register-farmer">Register Farmer</NavLink>
+          <NavLink to="/farmers">Farmers</NavLink>
+          <NavLink to="/notifications" className="active">Notification</NavLink>
+          <NavLink to="/farm-group">Farm Group</NavLink>
+          <hr />
         </nav>
 
-        <button className="logout" onClick={handleLogout}>
+        <button className="rf-logout" onClick={handleLogout}>
           Logout
         </button>
+
       </aside>
 
       {/* MAIN CONTENT */}
-      <main className="main">
-        <header className="header">
+      <main className="rf-main">
+
+        <header className="rf-header">
           <h1>Notification</h1>
           <p>View and Manage Notifications</p>
         </header>
 
         <div className="notification-container">
+
           {notifications.length === 0 ? (
-            <p style={{ textAlign: "center", marginTop: "20px", fontStyle: "italic", color: "#555" }}>
+
+            <p className="no-notifications">
               No notifications available.
             </p>
+
           ) : (
+
             notifications.map((notif) => (
+
               <div
                 key={notif.id}
-                className={`notification-card ${notif.type} ${
-                  notif.isRead ? "read" : ""
-                }`}
+                className={`notification-card ${notif.type} ${notif.isRead ? "read" : ""}`}
                 onClick={() => markAsRead(notif.id)}
               >
+
                 <div className="notif-content">
+
                   <h4>{notif.message}</h4>
-                  <p>{notif.timestamp?.toDate().toLocaleString()}</p>
+
+                  <p>
+                    {notif.timestamp?.toDate().toLocaleString()}
+                  </p>
+
                 </div>
 
                 <div className="device-id">
                   DEVICE ID: {notif.deviceID || "N/A"}
                 </div>
+
               </div>
+
             ))
+
           )}
+
         </div>
+
       </main>
+
     </div>
+
   );
+
 }

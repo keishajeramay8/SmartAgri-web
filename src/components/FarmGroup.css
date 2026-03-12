@@ -1,169 +1,276 @@
+/* PAGE HEADER */
+
+.f-header{
+display:flex;
+margin-left: 22px;
+justify-content:space-between;
+align-items:center;
+margin-bottom:25px;
+}
+
+.farm-header h2{
+font-size:22px;
+font-weight:600;
+}
+
+
 /* CREATE BUTTON */
-.create-farm-btn {
-  background:#ff5c8d;
-  color:white;
-  padding:8px 16px;
-  border:none;
-  border-radius:6px;
-  cursor:pointer;
+
+.create-farm-btn{
+background:#ff0c85;
+color:white;
+margin-left: 22px;
+border:none;
+padding:10px 18px;
+border-radius:8px;
+cursor:pointer;
+font-weight:500;
+transition:0.2s;
 }
 
-.create-farm-btn:hover { background:#1454c0; }
-
-/* MODAL OVERLAY */
-.modal-overlay {
-  position:fixed;
-  top:0;
-  left:0;
-  width:100%;
-  height:100%;
-  background:rgba(0,0,0,0.4);
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  z-index:999;
+.create-farm-btn:hover{
+background:#d9006e;
 }
 
-/* MODAL BOX */
-.modal-box {
-  background:white;
-  padding:25px;
-  border-radius:10px;
-  width:350px;
-  display:flex;
-  flex-direction:column;
-  gap:12px;
+
+/* FARM CARDS CONTAINER */
+
+.farm-card-container{
+padding:20px;
 }
 
-/* MODAL INPUTS */
-.modal-box input {
-  padding:8px;
-  border:1px solid #ccc;
-  border-radius:6px;
+
+/* GRID */
+
+.farm-card-grid{
+display:grid;
+grid-template-columns:repeat(auto-fill,minmax(340px,1fr));
+gap:25px;
 }
 
-/* MODAL BUTTONS */
-.modal-actions {
-  display:flex;
-  gap:10px;
-  justify-content:flex-end;
+
+/* FARM CARD */
+
+.farm-card{
+background:white;
+padding:24px;
+border-radius:14px;
+border:1px solid #ffeafa;
+box-shadow:0 6px 15px rgba(0,0,0,0.06);
+transition:0.25s;
+position:relative;
+z-index:1;
 }
 
-.modal-create-btn {
-  background:#ff5c8d;
-  color:white;
-  border:none;
-  padding:8px 14px;
-  border-radius:6px;
-  cursor:pointer;
+.farm-card:hover{
+transform:translateY(-6px);
+box-shadow:0 10px 25px rgba(0,0,0,0.08);
 }
 
-.modal-close-btn {
-  background:#ff5c8d;
-  color:white;
-  border:none;
-  padding:8px 14px;
-  border-radius:6px;
-  cursor:pointer;
+
+/* TITLE ROW */
+
+.farm-title-row{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:12px;
 }
 
-/* EDIT / DELETE BUTTONS IN TABLE */
-.farm-actions {
-  display:flex;
-  gap:10px;
-  justify-content:flex-end;
+.farm-title-row h3{
+font-size:18px;
+font-weight:600;
 }
 
-.edit-btn {
-  background:white;
-  border:1px solid #ccc;
-  padding:6px 12px;
-  border-radius:6px;
-  cursor:pointer;
+
+/* FARM CODE BADGE */
+
+.farm-code-badge{
+background:#ffe3f3;
+color:#ff0c85;
+font-size:12px;
+padding:4px 8px;
+border-radius:6px;
+font-weight:600;
 }
 
-.delete-btn {
-  background:#ff5c8d;
-  color:white;
-  border:none;
-  padding:6px 12px;
-  border-radius:6px;
-  cursor:pointer;
-}
-/* FARM CARD CONTAINER */
-.farm-card-container {
-  padding: 20px;
+
+/* FARM INFO */
+
+.farm-info{
+display:flex;
+gap:15px;
+font-size:14px;
+color:#666;
+margin-bottom:15px;
 }
 
-/* GRID LAYOUT FOR CARDS */
-.farm-card-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 20px;
+
+/* ACTION BUTTONS GRID */
+
+.farm-card-actions{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:10px;
+margin-top:10px;
 }
 
-/* FARM GROUP CARD */
-.farm-card {
-  background: white;
-  padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-  transition: 0.3s;
+
+/* BUTTON BASE */
+
+.farm-card-actions button{
+padding:8px 12px;
+border-radius:6px;
+border:none;
+cursor:pointer;
+font-size:13px;
+transition:0.2s;
 }
 
-.farm-card:hover {
-  transform: translateY(-4px);
+
+/* BUTTON COLORS */
+
+.view-btn{
+background:#c0b1b9;
+color:white;
 }
 
-/* FARM GROUP TITLE */
-.farm-card h3 {
-  margin-bottom: 8px;
-  font-size: 18px;
+.view-btn:hover{
+background:#d9006e;
 }
 
-/* FARM CODE TEXT */
-.farm-code {
-  font-size: 14px;
-  color: #555;
-  margin-bottom: 16px;
+.device-btn{
+background:#a5b6c4;
+color:white;
 }
 
-/* CARD ACTION BUTTONS */
-.farm-card-actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+.device-btn:hover{
+background:#1976d2;
 }
 
-/* VIEW MEMBERS BUTTON */
-.view-btn {
-  background: #ff5c8d;
-  color: white;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 6px;
-  cursor: pointer;
+.edit-btn{
+background:rgb(255, 249, 249);
+border:3px solid #080707;
 }
 
-.view-btn:hover {
-  background: #2b6cb0;
+.edit-btn:hover{
+background:#f3f3f3;
 }
 
-/* EDIT BUTTON (KEEP YOUR STYLE) */
-.edit-btn {
-  background: white;
-  border: 1px solid #ccc;
-  padding: 6px 12px;
-  border-radius: 6px;
-  cursor: pointer;
+.delete-btn{
+background:#e77472;
+color:white;
 }
 
-/* DELETE BUTTON (KEEP YOUR STYLE) */
-.delete-btn {
-  background: #e53e3e;
-  color: white;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 6px;
-  cursor: pointer;
+.delete-btn:hover{
+background:#c62828;
+}
+
+
+/* MODAL */
+
+.modal-overlay{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.45);
+display:flex;
+justify-content:center;
+align-items:center;
+z-index:999;
+}
+
+.modal-box{
+background:white;
+padding:25px;
+border-radius:12px;
+width:360px;
+display:flex;
+flex-direction:column;
+gap:12px;
+box-shadow:0 10px 25px rgba(0,0,0,0.15);
+}
+
+.modal-box input{
+padding:10px;
+border:1px solid #ddd;
+border-radius:6px;
+font-size:14px;
+}
+
+.modal-actions{
+display:flex;
+justify-content:flex-end;
+gap:10px;
+margin-top:5px;
+}
+
+.modal-create-btn{
+background:#ff0c85;
+color:white;
+border:none;
+padding:8px 14px;
+border-radius:6px;
+cursor:pointer;
+}
+
+.modal-create-btn:hover{
+background:#d9006e;
+}
+
+.modal-close-btn{
+background:#ccc;
+border:none;
+padding:8px 14px;
+border-radius:6px;
+cursor:pointer;
+}
+
+
+/* MEMBERS LIST */
+
+.member-list{
+display:flex;
+flex-direction:column;
+gap:10px;
+margin-bottom:10px;
+}
+
+.member-card{
+background:#f8f8f8;
+padding:10px;
+border-radius:6px;
+border:1px solid #eee;
+}
+
+
+/* DEVICE LIST */
+
+.device-list{
+display:flex;
+flex-direction:column;
+gap:10px;
+margin-bottom:10px;
+}
+
+.device-card{
+border:1px solid #eee;
+padding:12px;
+border-radius:8px;
+background:#fafafa;
+}
+
+.device-card h4{
+margin:0;
+font-size:15px;
+}
+
+
+/* SAFETY */
+
+.f-main{
+position:relative;
+z-index:1;
 }

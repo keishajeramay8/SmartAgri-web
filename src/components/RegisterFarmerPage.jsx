@@ -218,9 +218,10 @@ export default function RegisterFarmerPage() {
             Register Farmer
           </NavLink>
           <NavLink to="/farmers">Farmers</NavLink>
-          <NavLink to="/soil-status">Soil Moisture Status</NavLink>
             <NavLink to="/notifications">Notification</NavLink>
           <NavLink to="/farm-group">Farm Group</NavLink>
+          <hr />
+
         </nav>
 
         <button className="f-logout" onClick={handleLogout}>
@@ -233,7 +234,7 @@ export default function RegisterFarmerPage() {
       <main className="f-main">
 
         <header className="f-header">
-          <h1>PENDING FARMER REQUESTS</h1>
+          <h1>Pending Farmer Requests</h1>
         </header>
 
         <section className="f-table-section">

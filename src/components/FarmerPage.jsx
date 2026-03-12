@@ -249,9 +249,9 @@ export default function FarmerPage() {
           <NavLink to="/farmers" className="active">
             Farmers
           </NavLink>
-          <NavLink to="/soil-status">Soil Moisture Status</NavLink>
           <NavLink to="/notifications">Notification</NavLink>
           <NavLink to="/farm-group">Farm Group</NavLink>
+                    <hr />
 
         </nav>
 
@@ -265,7 +265,7 @@ export default function FarmerPage() {
       <main className="f-main">
 
         <header className="f-header">
-          <h1>FARMER MANAGEMENT</h1>
+          <h1>Farmer Management</h1>
         </header>
 
         <section className="f-table-section">
