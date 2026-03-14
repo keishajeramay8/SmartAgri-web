@@ -1,11 +1,9 @@
-// src/components/NotificationPage.jsx
-
+import './NotificationPage.css';
 import React, { useEffect, useState } from "react";
 import { auth, db } from "../firebase";
 import {
   collection,
   query,
-  where,
   orderBy,
   onSnapshot,
   updateDoc,
@@ -15,14 +13,11 @@ import {
 import { NavLink, useNavigate } from "react-router-dom";
 import { signOut } from "firebase/auth";
 
-export default function NotificationPage() {
-
+const NotificationPage = ({ fcmMessage }) => {
   const navigate = useNavigate();
-
   const [notifications, setNotifications] = useState([]);
   const [userName, setUserName] = useState({ first: "", last: "" });
 
-  // Logout
   const handleLogout = async () => {
     try {
       await signOut(auth);
@@ -32,107 +27,94 @@ export default function NotificationPage() {
     }
   };
 
-  // Fetch admin name
   useEffect(() => {
-
     const fetchUserName = async () => {
-
       const user = auth.currentUser;
       if (!user) return;
 
       try {
-
         const userDocRef = doc(db, "users", user.uid);
         const userSnap = await getDoc(userDocRef);
 
         if (userSnap.exists()) {
-
           const data = userSnap.data();
-
           setUserName({
-            first: data.firstName || "",
-            last: data.lastName || "",
+            first: data.fname || "",
+            last: data.lname || "",
           });
-
         }
-
       } catch (err) {
-
         console.error("Error fetching user data:", err);
-
       }
-
     };
-
     fetchUserName();
-
   }, []);
 
-  // Real-time notifications
   useEffect(() => {
-
     const user = auth.currentUser;
     if (!user) return;
 
     const q = query(
-      collection(db, "notifications"),
-      where("userID", "==", user.uid),
-      orderBy("timestamp", "desc")
+      collection(db, "users", user.uid, "notifications"),
+      orderBy("createdAt", "desc")
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-
-      const list = snapshot.docs.map((docSnap) => ({
-        id: docSnap.id,
-        ...docSnap.data(),
-      }));
-
+      const list = snapshot.docs.map((docSnap) => {
+        const data = docSnap.data();
+        return {
+          id: docSnap.id,
+          ...data,
+          createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : data.createdAt,
+        };
+      });
       setNotifications(list);
-
     });
 
     return () => unsubscribe();
-
   }, []);
 
-  // Mark as read
+  useEffect(() => {
+    if (!fcmMessage) return;
+    const newNotif = {
+      id: fcmMessage.data?.notifId || new Date().getTime(),
+      title: fcmMessage.notification?.title || "New Notification",
+      body: fcmMessage.notification?.body || "",
+      type: "alert",
+      read: false,
+      deviceId: fcmMessage.data?.deviceId || null,
+      createdAt: new Date(),
+    };
+    setNotifications((prev) => [newNotif, ...prev]);
+  }, [fcmMessage]);
+
   const markAsRead = async (id) => {
-
     try {
-
-      await updateDoc(doc(db, "notifications", id), {
-        isRead: true,
+      await updateDoc(doc(db, "users", auth.currentUser.uid, "notifications", id), {
+        read: true,
       });
-
     } catch (error) {
-
       console.error("Error marking notification as read:", error);
-
     }
+  };
 
+  const getColor = (type) => {
+    switch (type) {
+      case "alert": return "#fb8c00";
+      case "update": return "#43a047";
+      case "weatherUpdate": return "#00acc1";
+      default: return "#757575";
+    }
   };
 
   return (
-
     <div className="rf-dashboard">
-
-      {/* SIDEBAR */}
       <aside className="rf-sidebar">
-
-        <h2 className="rf-logo">
-          <span className="smart">Smart</span>AGRI
-        </h2>
-
+        <h2 className="rf-logo"><span className="smart">Smart</span>AGRI</h2>
         <div className="rf-profile">
-
           <div className="rf-avatar"></div>
-
-          <h4>
-            {userName.first || "Loading..."} {userName.last}
-          </h4>
-
+          <h4>{userName.first || "Loading..."} {userName.last}</h4>
           <p>Registered Admin</p>
-
         </div>
 
         <nav className="rf-menu">
@@ -144,64 +126,39 @@ export default function NotificationPage() {
           <hr />
         </nav>
 
-        <button className="rf-logout" onClick={handleLogout}>
-          Logout
-        </button>
-
+        <button className="rf-logout" onClick={handleLogout}>Logout</button>
       </aside>
 
-      {/* MAIN CONTENT */}
       <main className="rf-main">
-
         <header className="rf-header">
-          <h1>Notification</h1>
-          <p>View and Manage Notifications</p>
+          <h1>Notifications Timeline</h1>
+          <p>See your notifications in a chronological timeline.</p>
         </header>
 
-        <div className="notification-container">
-
+        <div className="timeline-container">
           {notifications.length === 0 ? (
-
-            <p className="no-notifications">
-              No notifications available.
-            </p>
-
+            <p className="no-notifications">No notifications yet.</p>
           ) : (
-
             notifications.map((notif) => (
-
               <div
                 key={notif.id}
-                className={`notification-card ${notif.type} ${notif.isRead ? "read" : ""}`}
+                className={`timeline-item ${notif.read ? "read" : ""}`}
                 onClick={() => markAsRead(notif.id)}
               >
-
-                <div className="notif-content">
-
-                  <h4>{notif.message}</h4>
-
-                  <p>
-                    {notif.timestamp?.toDate().toLocaleString()}
-                  </p>
-
+                <div className="timeline-dot" style={{ backgroundColor: getColor(notif.type) }}></div>
+                <div className="timeline-content">
+                  <h4>{notif.title}</h4>
+                  <p>{notif.body}</p>
+                  <small>{notif.createdAt?.toLocaleString()}</small>
+                  {notif.deviceId && <span className="device-id">{notif.deviceId}</span>}
                 </div>
-
-                <div className="device-id">
-                  DEVICE ID: {notif.deviceID || "N/A"}
-                </div>
-
               </div>
-
             ))
-
           )}
-
         </div>
-
       </main>
-
     </div>
-
   );
+};
 
-}
+export default NotificationPage;
