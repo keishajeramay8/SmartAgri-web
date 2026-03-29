@@ -58,3 +58,163 @@
   color: #777;
   margin-top: 5px;
 }
+
+.notif-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 15px;
+}
+
+.mark-all-btn {
+  background: #2e7d32;
+  color: white;
+  border: none;
+  padding: 7px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.mark-all-btn:hover {
+  background: #1b5e20;
+}
+
+.notif-buttons {
+  margin-top: 8px;
+  display: flex;
+  gap: 8px;
+}
+
+.read-btn {
+  background: #43a047;
+  color: white;
+  border: none;
+  padding: 4px 10px;
+  border-radius: 5px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.read-btn:hover {
+  background: #2e7d32;
+}
+
+.delete-btn {
+  background: #e53935;
+  color: white;
+  border: none;
+  padding: 4px 10px;
+  border-radius: 5px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.delete-btn:hover {
+  background: #c62828;
+}
+
+.confirm-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.confirm-content {
+  background: #fff;
+  padding: 25px 30px;
+  border-radius: 8px;
+  text-align: center;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+}
+
+.confirm-buttons {
+  margin-top: 20px;
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+}
+
+.confirm-buttons .read-btn {
+  background: #43a047;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+}
+
+.confirm-buttons .read-btn:hover {
+  background: #2e7d32;
+}
+
+.confirm-buttons .delete-btn {
+  background: #e53935;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+}
+
+.confirm-buttons .delete-btn:hover {
+  background: #c62828;
+}
+
+/* ===== Notification badge on sidebar navlink ===== */
+.notif-nav-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.notif-badge {
+  background-color: #e53935;
+  color: white;
+  font-size: 11px;
+  font-weight: bold;
+  border-radius: 50px;
+  padding: 2px 7px;
+  min-width: 20px;
+  text-align: center;
+  margin-left: 8px;
+}
+
+/* ===== Unread summary text ===== */
+.unread-summary {
+  font-size: 14px;
+  color: #555;
+  margin: 0;
+}
+/* ===== Action buttons row ===== */
+.notif-action-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+/* ===== Delete All button ===== */
+.delete-all-btn {
+  background: #e53935;
+  color: white;
+  border: none;
+  padding: 7px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.delete-all-btn:hover {
+  background: #c62828;
+}
+
+.delete-all-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}

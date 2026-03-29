@@ -108,6 +108,7 @@ html, body {
   flex: 1;
   padding: 20px;
   overflow-y: auto;
+  
 }
 
 /* HEADER */
@@ -131,7 +132,7 @@ html, body {
 .f-table-header,
 .f-row {
   display: grid;
-  grid-template-columns: 1fr 1fr 2fr 120px;
+  grid-template-columns: 1fr 1fr 4fr 120px;
   align-items: center;
   padding: 10px 0;
   column-gap: 10px;
@@ -139,10 +140,10 @@ html, body {
 
 .f-table-header {
   font-weight: bold;
-  border-bottom: 2px solid #ddd;
+  border-bottom: 2px solid #000000;
   position: sticky;
   top: 0;
-  background: #F9F6EE;
+  background: #c9c1c5;
 }
 
 .f-row {

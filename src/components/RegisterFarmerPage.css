@@ -185,3 +185,57 @@ html, body {
 .f-actions button.delete-icon:hover {
   background: #c53030; /* darker red on hover */
 }
+/* MODAL */
+.modal-overlay {
+  position: fixed;
+  top:0;
+  left:0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.modal-box {
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+  width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+}
+
+.modal-box h3 {
+  margin-bottom: 10px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.modal-create-btn {
+  background:#ff0c85;
+  color:white;
+  border:none;
+  padding:8px 14px;
+  border-radius:6px;
+  cursor:pointer;
+}
+.modal-create-btn:hover { background:#d9006e; }
+
+.modal-close-btn {
+  background:#ccc;
+  border:none;
+  padding:8px 14px;
+  border-radius:6px;
+  cursor:pointer;
+}
+.modal-close-btn:hover { background:#999; }

@@ -11,8 +11,6 @@ html, body {
 
 * {
   box-sizing: border-box;
-  margin: 0;
-  padding: 0;
 }
 
 /* DASHBOARD LAYOUT */
@@ -43,7 +41,6 @@ html, body {
   font-weight: 700;
   color: #f39c12;
 }
-
 .logo .italic {
   font-style: italic;
   font-weight: 400;
@@ -57,11 +54,7 @@ html, body {
   min-height: 120px;
   border-bottom: 1px solid #e2e2e2;
 }
-
-.profile h4 {
-  font-size: 16px;
-}
-
+.profile h4 { font-size: 16px; }
 .avatar {
   width: 70px;
   height: 70px;
@@ -70,13 +63,8 @@ html, body {
   margin: auto;
   margin-bottom: 10px;
 }
+.role { font-size: 12px; color: green; }
 
-.role {
-  font-size: 12px;
-  color: green;
-}
-
-/* SIDEBAR MENU */
 /* SIDEBAR MENU */
 .menu a {
   text-decoration: none;
@@ -86,28 +74,7 @@ html, body {
   display: block;
   border-left: 3px solid transparent;
 }
-
-.menu a:hover,
-.menu a.active {
-  background: #e8f3ed;
-}
-
-.weather-icon{
-width:120px;
-}
-
-.CircularProgressbar-path{
-stroke:#4caf50;
-}
-
-.CircularProgressbar-text{
-fill:#333;
-font-size:20px;
-}
-
-.CircularProgressbar-trail{
-stroke:#eee;
-}
+.menu a:hover, .menu a.active { background: #e8f3ed; }
 
 /* Logout */
 .logout {
@@ -126,59 +93,27 @@ stroke:#eee;
   padding: 20px;
   overflow-y: auto;
   max-width: 100%;
+  scrollbar-width: thin;
 }
 
 /* HEADER */
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-/* DEVICE GRID */
-.device-grid{
-display:grid;
-grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
-gap:15px;
-margin-top:10px;
-}
-
-.device-box{
-border:1px solid #f0bbbb;
-padding:15px;
-border-radius:8px;
-background:#fafafa;
-text-align:center;
-}
-
-.device-box .soil-chart{
-width:100px;
-margin:10px auto;
-}
+.header { display: flex; justify-content: space-between; align-items: center; }
 
 /* DASHBOARD GRID */
-
-/* FIRST ROW */
 .cards {
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:20px;
-  margin-bottom:20px;
+  display: grid;
+  gap: 20px;
+  margin-bottom: 20px;
 }
 
-/* SECOND ROW */
-.second-row{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:20px;
-  align-items:start;
+/* TOP ROW (Farm Group + Soil) */
+.cards.top-row {
+  grid-template-columns: 1fr 2fr;
 }
 
-/* WEATHER COLUMN */
-.weather-column{
-  display:flex;
-  flex-direction:column;
-  gap:20px;
+/* SECOND ROW (Weather + Water) */
+.cards.second-row {
+  grid-template-columns: 1fr 1fr;
 }
 
 /* CARD STYLE */
@@ -187,28 +122,13 @@ margin:10px auto;
   padding: 18px;
   border-radius: 10px;
   border: 3px solid transparent;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
 }
 
-/* FARM GROUP */
-.card.farm-group-card {
-  border-color: #ffeafa;
-}
-
-/* SOIL CARD */
-.card.soil-card {
-  border-color: #ffeafa;
-  margin-top: -165px;
-}
-
-/* WEATHER */
-.card.weather-card {
-  border-color: #ffeafa;
-}
-
-/* WATER ANALYTICS */
-.card.water-card{
-  border-color:#ffeafa;
-}
+.card.farm-group-card { border-color: #ffeafa; padding: 12px 18px; max-height: 150px; }
+.card.soil-card { border-color: #ffeafa; }
+.card.weather-card { border-color: #ffeafa; padding: 12px 18px; }
+.card.water-card { border-color: #ffeafa; padding: 12px 18px; }
 
 /* SELECT STYLE */
 .farm-select {
@@ -225,23 +145,75 @@ margin:10px auto;
   justify-content: space-between;
   align-items: center;
 }
+.weather-icon {
+  width: 150px;
+  margin-bottom: 15px;
+}
 
-/* MOBILE */
+/* DEVICE GRID */
+.device-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+  margin-top: 10px;
+}
+.device-box {
+  border: 1px solid #f0bbbb;
+  padding: 15px;
+  border-radius: 8px;
+  background: #fafafa;
+  text-align: center;
+  transition: transform 0.2s ease;
+}
+.device-box:hover { transform: translateY(-3px); }
+.device-box .soil-chart { width: 100px; margin: 10px auto; }
+
+/* WATER ANALYTICS */
+.water-header { display: flex; justify-content: space-between; align-items: center; }
+.water-total { font-size: 20px; font-weight: bold; color: #4caf50; }
+.water-summary {
+  display: flex;
+  justify-content: space-between;
+  margin: 10px 0;
+  font-size: 14px;
+  color: #555;
+}
+.water-chart-container { width: 100%; height: 300px; position: relative; }
+
+canvas { max-width: 100%; }
+
+/* CIRCULAR PROGRESS BAR */
+.CircularProgressbar-path { stroke: #4caf50; }
+.CircularProgressbar-text { fill: #333; font-size: 20px; }
+.CircularProgressbar-trail { stroke: #eee; }
+
+/* Water Analytics Buttons */
+.water-period-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin: 15px 0;
+}
+.water-period-buttons button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  background-color: #eee;
+  color: #333;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+.water-period-buttons button.active {
+  background-color: #4caf50;
+  color: white;
+}
+
+/* RESPONSIVE */
+@media (max-width: 1024px) {
+  .cards.top-row, .cards.second-row { grid-template-columns: 1fr; }
+}
 @media (max-width: 768px) {
-
-  .dashboard {
-    flex-direction: column;
-  }
-
-  .sidebar {
-    width: 100%;
-    min-width: 100%;
-  }
-
-  .cards,
-  .second-row{
-    grid-template-columns:1fr;
-  }
-  
-
+  .dashboard { flex-direction: column; }
+  .sidebar { width: 100%; min-width: 100%; }
 }

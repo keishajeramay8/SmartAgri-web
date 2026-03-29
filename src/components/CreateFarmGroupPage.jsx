@@ -172,14 +172,14 @@ export default function CreateFarmGroupPage() {
           <span className="role">Registered Admin</span>
         </div>
 
-       <nav className="f-menu">
-  <NavLink to="/dashboard">Dashboard</NavLink>
-  <NavLink to="/register-farmer">Register Farmer</NavLink>
-  <NavLink to="/farmers">Farmers</NavLink>
-  <NavLink to="/soil-status">Soil Moisture Status</NavLink>
-  <NavLink to="/notifications">Notification</NavLink>
- 
-</nav>
+        <nav className="f-menu">
+          <NavLink to="/dashboard">Dashboard</NavLink>
+          <NavLink to="/register-farmer">Register Farmer</NavLink>
+          <NavLink to="/farmers">Farmers</NavLink>
+          <NavLink to="/soil-status">Soil Moisture Status</NavLink>
+          <NavLink to="/notifications">Notification</NavLink>
+
+        </nav>
 
         <button className="logout" onClick={handleLogout}>
           Logout
