@@ -1,276 +1,667 @@
-/* PAGE HEADER */
+/* ═══════════════════════════════════════════
+   FarmGroup.css — SmartAGRI Redesign
+═══════════════════════════════════════════ */
 
-.f-header{
-display:flex;
-margin-left: 22px;
-justify-content:space-between;
-align-items:center;
-margin-bottom:25px;
+/* ─── RESET / BASE ─── */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
-.farm-header h2{
-font-size:22px;
-font-weight:600;
+/* ─── LAYOUT ─── */
+.fg-dashboard {
+  display: flex;
+  min-height: 100vh;
+  background: #f5f4f0;
+  font-family: 'Segoe UI', sans-serif;
 }
 
-
-/* CREATE BUTTON */
-
-.create-farm-btn{
-background:#ff0c85;
-color:white;
-margin-left: 22px;
-border:none;
-padding:10px 18px;
-border-radius:8px;
-cursor:pointer;
-font-weight:500;
-transition:0.2s;
+/* ═══════════════════════════════════════════
+   SIDEBAR
+═══════════════════════════════════════════ */
+.fg-sidebar {
+  width: 228px;
+  flex-shrink: 0;
+  background: #ffffff;
+  border-right: 1px solid #ece9e4;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
 }
 
-.create-farm-btn:hover{
-background:#d9006e;
+.fg-logo {
+  font-size: 19px;
+  font-weight: 600;
+  color: #1a1a1a;
+  padding: 24px 22px 22px;
+  letter-spacing: -0.3px;
 }
 
-
-/* FARM CARDS CONTAINER */
-
-.farm-card-container{
-padding:20px;
+.fg-logo-smart {
+  color: #e91e8c;
 }
 
-
-/* GRID */
-
-.farm-card-grid{
-display:grid;
-grid-template-columns:repeat(auto-fill,minmax(340px,1fr));
-gap:25px;
+/* Profile block */
+.fg-profile {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 14px 18px;
+  border-top: 1px solid #ece9e4;
+  border-bottom: 1px solid #ece9e4;
+  margin-bottom: 6px;
 }
 
-
-/* FARM CARD */
-
-.farm-card{
-background:white;
-padding:24px;
-border-radius:14px;
-border:1px solid #ffeafa;
-box-shadow:0 6px 15px rgba(0,0,0,0.06);
-transition:0.25s;
-position:relative;
-z-index:1;
+.fg-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #fce4f0;
+  color: #e91e8c;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
-.farm-card:hover{
-transform:translateY(-6px);
-box-shadow:0 10px 25px rgba(0,0,0,0.08);
+.fg-profile-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a1a1a;
+  line-height: 1.3;
 }
 
-
-/* TITLE ROW */
-
-.farm-title-row{
-display:flex;
-justify-content:space-between;
-align-items:center;
-margin-bottom:12px;
+.fg-profile-role {
+  font-size: 11px;
+  color: #999;
 }
 
-.farm-title-row h3{
-font-size:18px;
-font-weight:600;
+/* Nav links */
+.fg-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 12px;
+  flex: 1;
 }
 
-
-/* FARM CODE BADGE */
-
-.farm-code-badge{
-background:#ffe3f3;
-color:#ff0c85;
-font-size:12px;
-padding:4px 8px;
-border-radius:6px;
-font-weight:600;
+.fg-nav a {
+  display: block;
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  color: #666;
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
 }
 
-
-/* FARM INFO */
-
-.farm-info{
-display:flex;
-gap:15px;
-font-size:14px;
-color:#666;
-margin-bottom:15px;
+.fg-nav a:hover {
+  background: #f5f4f0;
+  color: #1a1a1a;
 }
 
-
-/* ACTION BUTTONS GRID */
-
-.farm-card-actions{
-display:grid;
-grid-template-columns:1fr 1fr;
-gap:10px;
-margin-top:10px;
+.fg-nav a.active {
+  background: #fce4f0;
+  color: #e91e8c;
+  font-weight: 600;
 }
 
-
-/* BUTTON BASE */
-
-.farm-card-actions button{
-padding:8px 12px;
-border-radius:6px;
-border:none;
-cursor:pointer;
-font-size:13px;
-transition:0.2s;
+/* Logout */
+.fg-logout {
+  margin: 14px 12px 18px;
+  padding: 9px 14px;
+  border-radius: 8px;
+  border: 1px solid #e0ddd8;
+  background: none;
+  font-size: 13px;
+  color: #888;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s, color 0.15s;
 }
 
-
-/* BUTTON COLORS */
-
-.view-btn{
-background:#c0b1b9;
-color:white;
+.fg-logout:hover {
+  background: #f5f4f0;
+  color: #444;
 }
 
-.view-btn:hover{
-background:#d9006e;
+/* ═══════════════════════════════════════════
+   MAIN
+═══════════════════════════════════════════ */
+.fg-main {
+  flex: 1;
+  padding: 30px 32px;
+  overflow: auto;
 }
 
-.device-btn{
-background:#a5b6c4;
-color:white;
+/* Top bar */
+.fg-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
 }
 
-.device-btn:hover{
-background:#1976d2;
+.fg-page-title {
+  font-size: 21px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 3px;
 }
 
-.edit-btn{
-background:rgb(255, 249, 249);
-border:3px solid #080707;
+.fg-page-sub {
+  font-size: 13px;
+  color: #999;
 }
 
-.edit-btn:hover{
-background:#f3f3f3;
+/* Create button */
+.fg-create-btn {
+  background: #e91e8c;
+  color: #fff;
+  border: none;
+  padding: 9px 18px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+  flex-shrink: 0;
 }
 
-.delete-btn{
-background:#e77472;
-color:white;
+.fg-create-btn:hover {
+  background: #c2185b;
 }
 
-.delete-btn:hover{
-background:#c62828;
+/* ─── STATS ─── */
+.fg-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 28px;
 }
 
-
-/* MODAL */
-
-.modal-overlay{
-position:fixed;
-top:0;
-left:0;
-width:100%;
-height:100%;
-background:rgba(0,0,0,0.45);
-display:flex;
-justify-content:center;
-align-items:center;
-z-index:999;
+.fg-stat {
+  background: #ffffff;
+  border: 1px solid #ece9e4;
+  border-radius: 10px;
+  padding: 16px 18px;
 }
 
-.modal-box{
-background:white;
-padding:25px;
-border-radius:12px;
-width:360px;
-display:flex;
-flex-direction:column;
-gap:12px;
-box-shadow:0 10px 25px rgba(0,0,0,0.15);
+.fg-stat-label {
+  font-size: 12px;
+  color: #aaa;
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
 }
 
-.modal-box input{
-padding:10px;
-border:1px solid #ddd;
-border-radius:6px;
-font-size:14px;
+.fg-stat-val {
+  font-size: 26px;
+  font-weight: 600;
+  color: #1a1a1a;
+  line-height: 1;
 }
 
-.modal-actions{
-display:flex;
-justify-content:flex-end;
-gap:10px;
-margin-top:5px;
+/* ═══════════════════════════════════════════
+   FARM CARDS GRID
+═══════════════════════════════════════════ */
+.fg-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 18px;
 }
 
-.modal-create-btn{
-background:#ff0c85;
-color:white;
-border:none;
-padding:8px 14px;
-border-radius:6px;
-cursor:pointer;
+/* Empty state */
+.fg-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 60px 20px;
+  color: #bbb;
 }
 
-.modal-create-btn:hover{
-background:#d9006e;
+.fg-empty-icon {
+  font-size: 48px;
+  display: block;
+  margin-bottom: 12px;
 }
 
-.modal-close-btn{
-background:#ccc;
-border:none;
-padding:8px 14px;
-border-radius:6px;
-cursor:pointer;
+.fg-empty p {
+  font-size: 14px;
 }
 
-
-/* MEMBERS LIST */
-
-.member-list{
-display:flex;
-flex-direction:column;
-gap:10px;
-margin-bottom:10px;
+/* Card */
+.fg-card {
+  background: #ffffff;
+  border: 1px solid #ece9e4;
+  border-radius: 14px;
+  padding: 20px;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.member-card{
-background:#f8f8f8;
-padding:10px;
-border-radius:6px;
-border:1px solid #eee;
+.fg-card:hover {
+  border-color: #d4d0c8;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
 }
 
-
-/* DEVICE LIST */
-
-.device-list{
-display:flex;
-flex-direction:column;
-gap:10px;
-margin-bottom:10px;
+.fg-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 13px;
 }
 
-.device-card{
-border:1px solid #eee;
-padding:12px;
-border-radius:8px;
-background:#fafafa;
+.fg-card-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: #f5f4f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
 }
 
-.device-card h4{
-margin:0;
-font-size:15px;
+.fg-code-badge {
+  font-size: 11px;
+  padding: 4px 9px;
+  border-radius: 20px;
+  background: #fce4f0;
+  color: #e91e8c;
+  font-weight: 600;
 }
 
+.fg-card-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 4px;
+}
 
-/* SAFETY */
+.fg-card-date {
+  font-size: 12px;
+  color: #aaa;
+  margin-bottom: 14px;
+}
 
-.f-main{
-position:relative;
-z-index:1;
+/* Counts */
+.fg-card-counts {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.fg-count {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #777;
+}
+
+.fg-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.fg-dot-members {
+  background: #e91e8c;
+}
+
+.fg-dot-devices {
+  background: #1976d2;
+}
+
+/* ─── CARD ACTIONS ─── */
+.fg-card-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  border-top: 1px solid #ece9e4;
+  padding-top: 15px;
+}
+
+.fg-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 7px 10px;
+  border-radius: 7px;
+  border: 1px solid #e0ddd8;
+  background: none;
+  font-size: 12px;
+  color: #555;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  font-weight: 500;
+}
+
+.fg-btn:hover {
+  background: #f5f4f0;
+}
+
+.fg-btn-members:hover {
+  border-color: #f48fb1;
+  color: #e91e8c;
+  background: #fce4f0;
+}
+
+.fg-btn-devices:hover {
+  border-color: #90caf9;
+  color: #1976d2;
+  background: #e3f2fd;
+}
+
+.fg-btn-edit:hover {
+  border-color: #aaa;
+  color: #333;
+  background: #f0efeb;
+}
+
+.fg-btn-delete {
+  border-color: #fca5a5;
+  color: #dc2626;
+}
+
+.fg-btn-delete:hover {
+  background: #fef2f2;
+  border-color: #f87171;
+}
+
+/* ═══════════════════════════════════════════
+   MODALS
+═══════════════════════════════════════════ */
+.fg-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+  backdrop-filter: blur(2px);
+}
+
+.fg-modal {
+  background: #ffffff;
+  border-radius: 14px;
+  width: 400px;
+  max-width: 92vw;
+  padding: 22px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.14);
+}
+
+.fg-modal-sm {
+  width: 360px;
+}
+
+/* Modal header */
+.fg-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.fg-modal-header h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.fg-modal-x {
+  background: none;
+  border: none;
+  font-size: 16px;
+  color: #aaa;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 5px;
+  line-height: 1;
+}
+
+.fg-modal-x:hover {
+  background: #f0efeb;
+  color: #444;
+}
+
+/* Labels and inputs */
+.fg-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-bottom: -6px;
+}
+
+.fg-input {
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 13.5px;
+  width: 100%;
+  color: #1a1a1a;
+  transition: border-color 0.15s;
+  outline: none;
+}
+
+.fg-input:focus {
+  border-color: #e91e8c;
+}
+
+/* Body text (for confirm dialogs) */
+.fg-modal-body-text {
+  font-size: 14px;
+  color: #555;
+  line-height: 1.6;
+}
+
+/* Footer */
+.fg-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.fg-modal-cancel {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  background: none;
+  font-size: 13px;
+  color: #666;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.fg-modal-cancel:hover {
+  background: #f5f4f0;
+}
+
+.fg-modal-confirm {
+  padding: 8px 18px;
+  border-radius: 8px;
+  border: none;
+  background: #e91e8c;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.fg-modal-confirm:hover {
+  background: #c2185b;
+}
+
+.fg-modal-danger {
+  padding: 8px 18px;
+  border-radius: 8px;
+  border: none;
+  background: #dc2626;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.fg-modal-danger:hover {
+  background: #b91c1c;
+}
+
+/* ─── SCROLLABLE LIST ─── */
+.fg-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 280px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.fg-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.fg-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.fg-list::-webkit-scrollbar-thumb {
+  background: #ddd;
+  border-radius: 4px;
+}
+
+.fg-empty-list {
+  font-size: 13px;
+  color: #bbb;
+  text-align: center;
+  padding: 20px 0;
+}
+
+/* ─── MEMBER ROWS ─── */
+.fg-member-row {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 9px 12px;
+  border-radius: 9px;
+  border: 1px solid #ece9e4;
+  background: #fafaf8;
+}
+
+.fg-member-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #fce4f0;
+  color: #e91e8c;
+  font-size: 11px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.fg-member-name {
+  font-size: 13.5px;
+  color: #1a1a1a;
+  font-weight: 500;
+}
+
+/* ─── DEVICE ROWS ─── */
+.fg-device-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 9px;
+  border: 1px solid #ece9e4;
+  background: #fafaf8;
+}
+
+.fg-device-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 2px;
+}
+
+.fg-device-id {
+  font-size: 11px;
+  color: #aaa;
+}
+
+/* ─── NOTIFICATION BADGE ─── */
+.notif-badge {
+  background: #dc2626;
+  color: white;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 20px;
+  padding: 1px 6px;
+  margin-left: 6px;
+}
+
+/* ─── NOTIFICATION NAV BADGE (sidebar) ─── */
+.fg-notif-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.fg-notif-badge {
+  background: #dc2626;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 20px;
+  padding: 2px 7px;
+  min-width: 20px;
+  text-align: center;
+  line-height: 1.4;
+  flex-shrink: 0;
+}
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 768px) {
+  .fg-sidebar {
+    display: none;
+  }
+
+  .fg-main {
+    padding: 20px 16px;
+  }
+
+  .fg-stats {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .fg-stats .fg-stat:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .fg-topbar {
+    flex-direction: column;
+    gap: 14px;
+    align-items: flex-start;
+  }
+
+  .fg-create-btn {
+    width: 100%;
+    text-align: center;
+  }
 }

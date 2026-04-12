@@ -1,219 +1,468 @@
-/* =========================
-   GLOBAL RESET
-========================= */
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
+/* ============================================================
+   RegisterPage.css — SmartAGRI
+   Matches LoginPage + LandingPage design system:
+   Playfair Display + DM Sans, cream/gold/pink palette
+   ============================================================ */
 
-html,
-body {
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;1,400;1,700&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+/* ── RESET ── */
+*, *::before, *::after {
+  box-sizing: border-box;
   margin: 0;
   padding: 0;
-  height: 100%;
-  width: 100%;
-  background: #f9f6ee;
-  font-family: Arial, sans-serif;
 }
 
-/* =========================
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow-x: hidden;
+  background: #F9F6EE;
+  font-family: 'DM Sans', sans-serif;
+  color: #2c2c2c;
+}
+
+/* ── VARIABLES ── */
+:root {
+  --gold:      #F4A300;
+  --gold-lt:   #FDF3DC;
+  --pink:      #E63462;
+  --pink-deep: #C42050;
+  --pink-lt:   #fce4f0;
+  --cream:     #F9F6EE;
+  --green:     #3A7D44;
+  --green-lt:  #E8F3E8;
+  --text:      #2C2C2C;
+  --text-soft: #777;
+  --white:     #ffffff;
+  --border:    #E8E4DA;
+}
+
+/* ============================================================
+   NAVBAR — identical to LoginPage
+   ============================================================ */
+.lp-nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 999;
+  height: 68px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 48px;
+  background: rgba(249, 246, 238, 0.97);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 1px 0 var(--border), 0 4px 24px rgba(0,0,0,0.06);
+}
+
+.lp-nav__brand {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--gold);
+  letter-spacing: -0.3px;
+}
+
+.lp-nav__brand-italic {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-weight: 400;
+}
+
+.lp-nav__brand-bold {
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 700;
+}
+
+.lp-nav__links {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  list-style: none;
+}
+
+.lp-nav__links li button {
+  background: none;
+  border: none;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14.5px;
+  font-weight: 500;
+  color: var(--text);
+  cursor: pointer;
+  padding: 8px 16px;
+  border-radius: 8px;
+  transition: background 0.18s, color 0.18s;
+}
+
+.lp-nav__links li button:hover {
+  background: var(--green-lt);
+  color: var(--green);
+}
+
+.lp-nav__active-btn {
+  background: var(--pink) !important;
+  color: var(--white) !important;
+  border-radius: 8px !important;
+  padding: 8px 22px !important;
+  font-weight: 600 !important;
+  box-shadow: 0 2px 8px rgba(230, 52, 98, 0.25) !important;
+  transition: background 0.18s, transform 0.15s, box-shadow 0.15s !important;
+}
+
+.lp-nav__active-btn:hover {
+  background: var(--pink-deep) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 16px rgba(230, 52, 98, 0.3) !important;
+}
+
+/* ============================================================
    PAGE LAYOUT
-========================= */
+   ============================================================ */
 .register-page {
   display: flex;
   min-height: 100vh;
-  width: 100vw;
-  background-color: #f9f6ee;
-}
-.inline-error {
-  color: red;
-  font-size: 0.75rem; /* small text like screenshot */
-  margin-top: 2px;
-  margin-right: 250px;
-  font-weight: normal;
+  width: 100%;
+  padding-top: 68px;
+  background: var(--cream);
 }
 
-/* =========================
-   LEFT SIDE (LOGO)
-========================= */
+/* ── LEFT — illustration ── */
 .left-side {
   flex: 1;
   display: flex;
   justify-content: center;
   align-items: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.left-side::before {
+  content: '';
+  position: absolute;
+  width: 480px;
+  height: 480px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(244,163,0,0.10) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.logo-wrapper {
+  position: relative;
+  z-index: 1;
+  animation: lp-fadeUp 0.7s ease both;
 }
 
 .logo-wrapper img {
-  max-width: 400px; /* larger logo */
+  max-width: 360px;
   width: 100%;
+  height: auto;
+  display: block;
+  filter: drop-shadow(0 20px 40px rgba(0,0,0,0.09));
 }
 
-/* =========================
-   RIGHT SIDE (FORM)
-========================= */
+/* ── RIGHT — form ── */
 .right-side {
   flex: 1;
   display: flex;
   justify-content: center;
   align-items: center;
+  padding: 40px 24px;
 }
 
+/* ============================================================
+   REGISTER FORM CARD
+   ============================================================ */
 .register-form {
-  background-color: #ffffff;
-  padding: 28px;              /* slightly larger padding */
-  border-radius: 12px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 36px 36px 32px;
   width: 100%;
-  max-width: 400px;           /* wider form */
-  margin-left: -60px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  max-width: 420px;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.07);
   text-align: center;
+  animation: lp-fadeUp 0.7s 0.1s ease both;
 }
 
-/* =========================
-   FORM TEXT
-========================= */
+/* Brand mark */
+.register-form-brand {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--gold);
+  margin-bottom: 18px;
+  display: block;
+  letter-spacing: -0.2px;
+}
+
+.register-form-brand-italic {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-weight: 400;
+}
+
 .register-form h2 {
-  color: #f4a300;
-  font-size: 20px;            /* slightly larger title */
+  font-family: 'Playfair Display', serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text);
   margin-bottom: 6px;
+  letter-spacing: -0.4px;
 }
 
-.register-form p {
-  font-size: 14px;
-  margin-bottom: 10px;
-  color: #333;
+.register-form > p {
+  font-size: 13.5px;
+  color: var(--text-soft);
+  margin-bottom: 22px;
+  font-weight: 400;
 }
 
-/* =========================
-   INPUT FIELDS
-========================= */
+/* ── INPUTS ── */
 .register-form input[type="text"],
 .register-form input[type="email"],
 .register-form input[type="password"] {
   width: 100%;
-  padding: 10px 12px;         /* larger inputs */
+  padding: 11px 14px;
   margin-bottom: 10px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  font-family: 'DM Sans', sans-serif;
   font-size: 14px;
+  color: var(--text);
+  background: #fafaf8;
   outline: none;
+  transition: border-color 0.18s, box-shadow 0.18s, background 0.18s;
 }
 
-.register-form input:focus {
-  border-color: #f4a300;
+.register-form input[type="text"]:focus,
+.register-form input[type="email"]:focus,
+.register-form input[type="password"]:focus {
+  border-color: var(--gold);
+  background: var(--white);
+  box-shadow: 0 0 0 3px rgba(244, 163, 0, 0.12);
 }
 
-/* =========================
-   CHECKBOX
-========================= */
+.register-form input::placeholder {
+  color: #bbb;
+  font-weight: 400;
+}
+
+/* error border override */
+.register-form input[style*="red"] {
+  border-color: var(--pink) !important;
+  box-shadow: 0 0 0 3px rgba(230, 52, 98, 0.10) !important;
+}
+
+/* ── INLINE ERROR ── */
+.inline-error {
+  font-family: 'DM Sans', sans-serif;
+  color: var(--pink);
+  font-size: 11.5px;
+  font-weight: 500;
+  margin: -6px 0 8px 4px;
+  text-align: left;
+  display: block;
+}
+
+/* ── ADDRESS SUGGESTIONS ── */
+.suggestions-list {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  list-style: none;
+  padding: 4px 0;
+  z-index: 100;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.10);
+  overflow: hidden;
+}
+
+.suggestions-list li {
+  padding: 10px 14px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s, color 0.15s;
+  line-height: 1.4;
+}
+
+.suggestions-list li:hover {
+  background: var(--green-lt);
+  color: var(--green);
+}
+
+/* ── CHECKBOX ── */
 .checkbox {
   display: flex;
   align-items: center;
-  margin-bottom: 10px;
+  gap: 8px;
+  font-family: 'DM Sans', sans-serif;
   font-size: 13px;
-  color: #444;
+  color: var(--text-soft);
+  margin-bottom: 18px;
+  text-align: left;
+  cursor: pointer;
 }
 
-.checkbox input {
-  margin-right: 8px;
+.checkbox input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--pink);
+  cursor: pointer;
+  margin: 0;
+  flex-shrink: 0;
 }
 
-/* =========================
-   BUTTONS
-========================= */
+/* ── REGISTER BUTTON ── */
 .register-btn {
   width: 100%;
-  background-color: #e63462;
-  color: #ff0c85;
-  padding: 10px 0;            /* larger button */
+  padding: 12px 0;
+  background: var(--pink);
   border: none;
-  border-radius: 6px;
-  font-weight: bold;
-  margin-bottom: 10px;
+  border-radius: 10px;
+  color: var(--white);
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  letter-spacing: 0.5px;
   cursor: pointer;
-  transition: background-color 0.3s;
+  margin-bottom: 14px;
+  transition: background 0.18s, transform 0.15s, box-shadow 0.15s;
+  box-shadow: 0 4px 14px rgba(230, 52, 98, 0.25);
 }
 
 .register-btn:hover {
-  background-color: #d12454;
+  background: var(--pink-deep);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(230, 52, 98, 0.32);
 }
 
-.google-btn {
-  width: 100%;
-  padding: 10px 0;            /* larger button */
-  border: 1px solid #e63462;
-  border-radius: 6px;
-  background-color: #ffffff;
-  color: #e63462;
-  font-weight: bold;
-  cursor: pointer;
+.register-btn:active {
+  transform: translateY(0);
 }
 
-.google-btn:hover {
-  background-color: #ffe6f0;
+.register-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
 }
 
-/* =========================
-   DIVIDER
-========================= */
+/* ── DIVIDER ── */
 .divider {
   display: flex;
   align-items: center;
-  text-align: center;
-  margin: 15px 0;
-  color: #aaa;
+  gap: 10px;
+  margin: 4px 0 14px;
 }
 
 .divider::before,
 .divider::after {
-  content: "";
+  content: '';
   flex: 1;
   height: 1px;
-  background: #ccc;
+  background: var(--border);
 }
 
 .divider span {
-  margin: 0 10px;
+  color: #bbb;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
 }
 
-/* =========================
-   SIGN IN LINK
-========================= */
+/* ── GOOGLE BUTTON ── */
+.google-btn {
+  width: 100%;
+  padding: 11px 0;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.18s, border-color 0.18s, transform 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.google-btn::before {
+  content: '';
+  width: 18px;
+  height: 18px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'%3E%3Cpath fill='%23EA4335' d='M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z'/%3E%3Cpath fill='%234285F4' d='M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z'/%3E%3Cpath fill='%23FBBC05' d='M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z'/%3E%3Cpath fill='%2334A853' d='M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z'/%3E%3C/svg%3E");
+  background-size: contain;
+  background-repeat: no-repeat;
+  flex-shrink: 0;
+}
+
+.google-btn:hover {
+  background: #fafaf8;
+  border-color: #d4d0c8;
+  transform: translateY(-1px);
+}
+
+/* ── SIGN IN LINK ── */
 .signin-link {
-  font-size: 12px;
-  margin-top: 12px;
+  font-size: 12.5px;
+  color: var(--text-soft);
+  margin-top: 16px;
 }
 
 .signin-link a {
-  color: #e63462;
+  color: var(--pink);
   text-decoration: none;
+  font-weight: 600;
+  transition: color 0.15s;
 }
 
 .signin-link a:hover {
+  color: var(--pink-deep);
   text-decoration: underline;
 }
 
-/* =========================
+/* ============================================================
+   ANIMATION
+   ============================================================ */
+@keyframes lp-fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================================
    RESPONSIVE
-========================= */
+   ============================================================ */
 @media (max-width: 900px) {
+  .lp-nav { padding: 0 20px; }
+
   .register-page {
     flex-direction: column;
+    align-items: center;
+    padding-top: 68px;
   }
 
-  .left-side,
+  .left-side {
+    width: 100%;
+    padding: 40px 24px 20px;
+  }
+
+  .logo-wrapper img { max-width: 180px; }
+
   .right-side {
     width: 100%;
+    padding: 0 24px 48px;
   }
 
   .register-form {
+    max-width: 100%;
+    padding: 28px 20px;
     margin-left: 0;
-    max-width: 90%;
-    padding: 24px;
-  }
-
-  .logo-wrapper img {
-    max-width: 220px;
   }
 }

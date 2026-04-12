@@ -2,15 +2,43 @@ import React, { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { auth, db } from "../firebase";
 import { signOut } from "firebase/auth";
-import { doc, getDoc, collection, query, where, getDocs, updateDoc, orderBy, limit } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  collection,
+  query,
+  where,
+  getDocs,
+  updateDoc,
+  orderBy,
+  limit,
+  onSnapshot,
+} from "firebase/firestore";
 import axios from "axios";
-import { CircularProgressbar } from "react-circular-progressbar";
+import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
 import { Line } from "react-chartjs-2";
-import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from "chart.js";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+} from "chart.js";
 import "react-circular-progressbar/dist/styles.css";
 import "./DashboardPage.css";
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 const WEATHER_KEY = "17a5aa9601f1e26815cc0cd44578658e";
 
@@ -33,22 +61,21 @@ export default function DashboardPage() {
   const [waterChartData, setWaterChartData] = useState({ labels: [], datasets: [] });
 
   const [loadingWeather, setLoadingWeather] = useState(true);
-
-  // ✅ Analytics Filter
   const [filterType, setFilterType] = useState("daily");
 
-  // Logout
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  // LOGOUT
   const handleLogout = async () => {
     await signOut(auth);
     navigate("/login");
   };
 
-  // Fetch User + Farm Groups
+  // FETCH USER + FARM GROUPS
   useEffect(() => {
     const fetchData = async () => {
       const user = auth.currentUser;
       if (!user) return navigate("/login");
-
       try {
         const userSnap = await getDoc(doc(db, "users", user.uid));
         if (userSnap.exists()) {
@@ -57,30 +84,46 @@ export default function DashboardPage() {
           setLocation({ lat: data.lat || null, lon: data.lon || null });
           setSelectedFarmGroup(data.selectedFarmGroupId || "");
         }
-
-        const farmQuery = query(collection(db, "farmgroups"), where("createdBy", "==", user.uid));
+        const farmQuery = query(
+          collection(db, "farmgroups"),
+          where("createdBy", "==", user.uid)
+        );
         const snapshot = await getDocs(farmQuery);
-        setFarmGroups(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })));
+        setFarmGroups(snapshot.docs.map((d) => ({ id: d.id, ...d.data() })));
       } catch (err) {
         console.error(err);
       }
     };
-
     fetchData();
   }, []);
 
-  // Fetch Devices + Readings + Irrigation
+  // REALTIME UNREAD NOTIFICATIONS
+  useEffect(() => {
+    const user = auth.currentUser;
+    if (!user) return;
+    const q = query(
+      collection(db, "users", user.uid, "notifications"),
+      orderBy("createdAt", "desc")
+    );
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const unread = snapshot.docs.filter((d) => !d.data().read).length;
+      setUnreadCount(unread);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // FETCH DEVICES + READINGS + IRRIGATION
   useEffect(() => {
     const fetchDeviceData = async () => {
       if (!selectedFarmGroup) return;
-
       try {
-        const farmRef = doc(db, "farmgroups", selectedFarmGroup);
-        const farmSnap = await getDoc(farmRef);
-        if (farmSnap.exists()) setFarmGroupName(farmSnap.data().farmgroupName || "Unnamed Farm Group");
+        const farmSnap = await getDoc(doc(db, "farmgroups", selectedFarmGroup));
+        if (farmSnap.exists())
+          setFarmGroupName(farmSnap.data().farmgroupName || "Unnamed Farm Group");
 
-        const devicesRef = collection(db, "farmgroups", selectedFarmGroup, "devices");
-        const deviceSnapshot = await getDocs(devicesRef);
+        const deviceSnapshot = await getDocs(
+          collection(db, "farmgroups", selectedFarmGroup, "devices")
+        );
 
         if (deviceSnapshot.empty) {
           setDevices([]);
@@ -95,39 +138,34 @@ export default function DashboardPage() {
         const deviceList = await Promise.all(
           deviceSnapshot.docs.map(async (deviceDoc) => {
             const deviceData = deviceDoc.data();
-
             const readingsRef = query(
-              collection(db, "farmgroups", selectedFarmGroup, "devices", deviceDoc.id, "readings"),
+              collection(
+                db,
+                "farmgroups",
+                selectedFarmGroup,
+                "devices",
+                deviceDoc.id,
+                "readings"
+              ),
               orderBy("time", "desc"),
               limit(10)
             );
-
             const readingsSnap = await getDocs(readingsRef);
-
             let latest = null;
             let irrigationPoints = [];
 
             if (!readingsSnap.empty) {
               latest = readingsSnap.docs[0].data();
-
               for (let r of readingsSnap.docs) {
-                const irrigationRef = collection(r.ref, "irrigations");
-                const irrigationSnap = await getDocs(irrigationRef);
-
-                irrigationSnap.forEach((doc) => {
-                  const ir = doc.data();
+                const irrigationSnap = await getDocs(
+                  collection(r.ref, "irrigations")
+                );
+                irrigationSnap.forEach((d) => {
+                  const ir = d.data();
                   if (!ir.time) return;
-
-                  const timeObj = ir.time.toDate();
-                  const timeLabel = timeObj.toLocaleString();
-
+                  const timeLabel = ir.time.toDate().toLocaleString();
                   const volumeLiters = (ir.volumeML || 0) / 1000;
-
-                  irrigationPoints.push({
-                    time: timeLabel,
-                    volume: volumeLiters
-                  });
-
+                  irrigationPoints.push({ time: timeLabel, volume: volumeLiters });
                   totalWater += volumeLiters;
                   labelsSet.add(timeLabel);
                 });
@@ -139,20 +177,18 @@ export default function DashboardPage() {
               deviceId: deviceData.deviceID || deviceDoc.id,
               growthstage: deviceData.growthstage || "N/A",
               latestReading: latest,
-              irrigationPoints
+              irrigationPoints,
             };
           })
         );
 
         const labels = Array.from(labelsSet).sort();
-
         const datasets = deviceList.map((device, idx) => {
           const map = {};
           device.irrigationPoints.forEach((p) => {
             if (!map[p.time]) map[p.time] = 0;
             map[p.time] += p.volume;
           });
-
           return {
             label: device.deviceId,
             data: labels.map((l) => map[l] || 0),
@@ -164,7 +200,6 @@ export default function DashboardPage() {
         setDevices(deviceList);
         setTotalWaterUsage(totalWater);
         setWaterChartData({ labels, datasets });
-
       } catch (error) {
         console.error("Device loading error:", error);
       }
@@ -175,14 +210,22 @@ export default function DashboardPage() {
     return () => clearInterval(interval);
   }, [selectedFarmGroup]);
 
-  // Weather
+  // WEATHER
   useEffect(() => {
     const fetchWeather = async () => {
       if (!location.lat || !location.lon) return;
       try {
-        const res = await axios.get("https://api.openweathermap.org/data/2.5/weather", {
-          params: { lat: location.lat, lon: location.lon, appid: WEATHER_KEY, units: "metric" }
-        });
+        const res = await axios.get(
+          "https://api.openweathermap.org/data/2.5/weather",
+          {
+            params: {
+              lat: location.lat,
+              lon: location.lon,
+              appid: WEATHER_KEY,
+              units: "metric",
+            },
+          }
+        );
         setWeather(res.data);
       } catch (err) {
         console.error(err);
@@ -193,19 +236,33 @@ export default function DashboardPage() {
     fetchWeather();
   }, [location]);
 
-  // Clock
+  // CLOCK
   useEffect(() => {
     if (!weather) return;
     const interval = setInterval(() => {
-      const nowUTC = new Date().getTime() + new Date().getTimezoneOffset() * 60000;
+      const nowUTC =
+        new Date().getTime() + new Date().getTimezoneOffset() * 60000;
       const localTime = new Date(nowUTC + weather.timezone * 1000);
-      setCurrentDate(localTime.toLocaleDateString(undefined, { weekday:"long", year:"numeric", month:"long", day:"numeric" }));
-      setCurrentTime(localTime.toLocaleTimeString(undefined, { hour:"2-digit", minute:"2-digit", second:"2-digit" }));
+      setCurrentDate(
+        localTime.toLocaleDateString(undefined, {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        })
+      );
+      setCurrentTime(
+        localTime.toLocaleTimeString(undefined, {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        })
+      );
     }, 1000);
     return () => clearInterval(interval);
   }, [weather]);
 
-  // Select Farm Group
+  // SELECT FARM GROUP
   const handleSelectFarmGroup = async (farmId, farmName) => {
     setSelectedFarmGroup(farmId);
     setFarmGroupName(farmName);
@@ -214,203 +271,317 @@ export default function DashboardPage() {
     await updateDoc(doc(db, "users", user.uid), { selectedFarmGroupId: farmId });
   };
 
+  const getInitials = (first = "", last = "") =>
+    `${first.charAt(0)}${last.charAt(0)}`.toUpperCase();
+
+  // COMPUTE FILTERED CHART DATA
+  const getFilteredChartData = () => {
+    if (!waterChartData.datasets.length) return waterChartData;
+    const grouped = {};
+    const newLabelsSet = new Set();
+
+    waterChartData.labels.forEach((label, index) => {
+      const dateObj = new Date(label);
+      let newLabel;
+      if (filterType === "daily") newLabel = dateObj.toLocaleTimeString();
+      else if (filterType === "weekly") newLabel = dateObj.toLocaleDateString();
+      else newLabel = `${dateObj.getFullYear()}-${dateObj.getMonth() + 1}`;
+
+      newLabelsSet.add(newLabel);
+      waterChartData.datasets.forEach((dataset) => {
+        if (!grouped[dataset.label]) grouped[dataset.label] = {};
+        if (!grouped[dataset.label][newLabel])
+          grouped[dataset.label][newLabel] = 0;
+        grouped[dataset.label][newLabel] += dataset.data[index] || 0;
+      });
+    });
+
+    const newLabels = Array.from(newLabelsSet).sort();
+    const newDatasets = waterChartData.datasets.map((dataset) => ({
+      ...dataset,
+      data: newLabels.map((l) => grouped[dataset.label]?.[l] || 0),
+    }));
+    return { labels: newLabels, datasets: newDatasets };
+  };
+
+  // MOISTURE STATUS COLOR
+  const getMoistureColor = (status = "") => {
+    const s = status.toLowerCase();
+    if (s.includes("wet") || s.includes("high")) return "#1976d2";
+    if (s.includes("dry") || s.includes("low")) return "#e91e8c";
+    return "#4caf50";
+  };
+
   return (
-    <div className="dashboard">
-
-      <aside className="sidebar">
-        <h2 className="logo"><span className="italic">Smart</span>AGRI</h2>
-
-        <div className="profile">
-          <div className="avatar"></div>
-          <h4>{userName.first} {userName.last}</h4>
-          <span className="role">Registered Admin</span>
+    <div className="db-dashboard">
+      {/* ── SIDEBAR ── */}
+      <aside className="db-sidebar">
+        <div className="db-logo">
+          <span className="db-logo-smart">Smart</span>AGRI
         </div>
 
-        <nav className="menu">
-          <NavLink to="/dashboard">Dashboard</NavLink>
+        <div className="db-profile">
+          <div className="db-avatar">
+            {userName.first ? getInitials(userName.first, userName.last) : "AD"}
+          </div>
+          <div>
+            <p className="db-profile-name">
+              {userName.first
+                ? `${userName.first} ${userName.last}`
+                : "Loading..."}
+            </p>
+            <p className="db-profile-role">Registered Admin</p>
+          </div>
+        </div>
+
+        <nav className="db-nav">
+          <NavLink to="/dashboard" className="active">Dashboard</NavLink>
           <NavLink to="/register-farmer">Register Farmer</NavLink>
           <NavLink to="/farmers">Farmers</NavLink>
-          <NavLink to="/notifications">Notification</NavLink>
+          <NavLink to="/notifications">
+            <span className="db-notif-link">
+              Notification
+              {unreadCount > 0 && (
+                <span className="db-notif-badge">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
+            </span>
+          </NavLink>
           <NavLink to="/farm-group">Farm Group</NavLink>
-          <hr />
         </nav>
 
-        <button className="logout" onClick={handleLogout}>Logout</button>
+        <button className="db-logout" onClick={handleLogout}>
+          Logout
+        </button>
       </aside>
 
-      <main className="main">
+      {/* ── MAIN ── */}
+      <main className="db-main">
 
-        <header className="header">
-          <h1>Dashboard</h1>
-        </header>
+        {/* TOP BAR */}
+        <div className="db-topbar">
+          <div>
+            <h1 className="db-page-title">Dashboard</h1>
+            <p className="db-page-sub">Welcome back, {userName.first || "Admin"}</p>
+          </div>
 
-        <div className="cards">
-          <div className="card farm-group-card">
-            <h3>Farm Group</h3>
-            <h2>{farmGroupName}</h2>
+          {/* FARM GROUP SELECTOR */}
+          <div className="db-farm-selector">
+            <label className="db-selector-label">Active Farm Group</label>
             <select
+              className="db-select"
               value={selectedFarmGroup}
               onChange={(e) => {
                 const farmId = e.target.value;
-                const farmName = farmGroups.find((f) => f.id === farmId)?.farmgroupName || "";
-                handleSelectFarmGroup(farmId, farmName);
+                const name =
+                  farmGroups.find((f) => f.id === farmId)?.farmgroupName || "";
+                handleSelectFarmGroup(farmId, name);
               }}
-              className="farm-select"
             >
               <option value="">Select Farm Group</option>
               {farmGroups.map((f) => (
-                <option key={f.id} value={f.id}>{f.farmgroupName}</option>
+                <option key={f.id} value={f.id}>
+                  {f.farmgroupName}
+                </option>
               ))}
             </select>
+            {selectedFarmGroup && (
+              <span className="db-active-badge">{farmGroupName}</span>
+            )}
           </div>
         </div>
 
-        <div className="cards second-row">
-          <div className="weather-column">
+        {/* STATS ROW */}
+        <div className="db-stats">
+          <div className="db-stat">
+            <p className="db-stat-label">Active Devices</p>
+            <p className="db-stat-val">{devices.length}</p>
+          </div>
+          <div className="db-stat">
+            <p className="db-stat-label">Total Water Used</p>
+            <p className="db-stat-val">{totalWaterUsage.toFixed(1)} L</p>
+          </div>
+          <div className="db-stat">
+            <p className="db-stat-label">Avg per Device</p>
+            <p className="db-stat-val">
+              {devices.length > 0
+                ? (totalWaterUsage / devices.length).toFixed(1) + " L"
+                : "0 L"}
+            </p>
+          </div>
+          <div className="db-stat">
+            <p className="db-stat-label">Farm Groups</p>
+            <p className="db-stat-val">{farmGroups.length}</p>
+          </div>
+        </div>
 
-            <div className="card weather-card">
-              <h3>Current Weather</h3>
-              {loadingWeather ? <p>Loading weather...</p> : weather ? (
-                <div className="weather-content">
-                  <div>
-                    <p>{weather.name}</p>
-                    <p>{currentDate}</p>
-                    <p>{currentTime}</p>
-                    <p>{weather.main.temp}°C</p>
-                    <p>{weather.weather[0].description}</p>
+        {/* CONTENT GRID */}
+        <div className="db-content-grid">
+
+          {/* LEFT COLUMN */}
+          <div className="db-left-col">
+
+            {/* WEATHER CARD */}
+            <div className="db-card">
+              <div className="db-card-header">
+                <h2 className="db-card-title">Current Weather</h2>
+              </div>
+
+              {loadingWeather ? (
+                <p className="db-placeholder">Loading weather...</p>
+              ) : weather ? (
+                <div className="db-weather-body">
+                  <div className="db-weather-info">
+                    <p className="db-weather-city">{weather.name}</p>
+                    <p className="db-weather-temp">{weather.main.temp}°C</p>
+                    <p className="db-weather-desc">
+                      {weather.weather[0].description}
+                    </p>
+                    <div className="db-weather-meta">
+                      <span>💧 {weather.main.humidity}%</span>
+                      <span>💨 {weather.wind.speed} m/s</span>
+                      <span>🌡 Feels {weather.main.feels_like}°C</span>
+                    </div>
+                    <p className="db-weather-date">{currentDate}</p>
+                    <p className="db-weather-time">{currentTime}</p>
                   </div>
                   <img
                     src={`https://openweathermap.org/img/wn/${weather.weather[0].icon}@4x.png`}
-                    alt="weather-icon"
-                    className="weather-icon"
+                    alt="weather"
+                    className="db-weather-icon"
                   />
                 </div>
-              ) : <p>No weather data</p>}
+              ) : (
+                <p className="db-placeholder">No weather data available.</p>
+              )}
             </div>
 
-            {/* ✅ WATER USAGE ANALYTICS CARD */}
-            <div className="card water-card">
-
-              <div className="water-header">
-                <h3>Water Usage Analytics</h3>
-                <span className="water-total">{totalWaterUsage.toFixed(2)} L</span>
-              </div>
-
-              <div className="water-summary">
-                <span>Devices: {devices.length}</span>
-                <span>
-                  Average per Device:{" "}
-                  {devices.length > 0
-                    ? (totalWaterUsage / devices.length).toFixed(2) + " L"
-                    : "0 L"}
+            {/* WATER ANALYTICS CARD */}
+            <div className="db-card">
+              <div className="db-card-header">
+                <h2 className="db-card-title">Water Usage Analytics</h2>
+                <span className="db-water-total">
+                  {totalWaterUsage.toFixed(2)} L
                 </span>
               </div>
 
-              <div className="water-period-buttons">
-                <button
-                  className={filterType === "daily" ? "active" : ""}
-                  onClick={() => setFilterType("daily")}
-                >
-                  Daily
-                </button>
-                <button
-                  className={filterType === "weekly" ? "active" : ""}
-                  onClick={() => setFilterType("weekly")}
-                >
-                  Weekly
-                </button>
-                <button
-                  className={filterType === "monthly" ? "active" : ""}
-                  onClick={() => setFilterType("monthly")}
-                >
-                  Monthly
-                </button>
+              <div className="db-filter-btns">
+                {["daily", "weekly", "monthly"].map((f) => (
+                  <button
+                    key={f}
+                    className={`db-filter-btn${filterType === f ? " active" : ""}`}
+                    onClick={() => setFilterType(f)}
+                  >
+                    {f.charAt(0).toUpperCase() + f.slice(1)}
+                  </button>
+                ))}
               </div>
 
-              <div className="water-chart-container">
+              <div className="db-chart-wrap">
                 {waterChartData.datasets.length > 0 ? (
                   <Line
-                    data={(() => {
-                      const grouped = {};
-                      const newLabelsSet = new Set();
-
-                      waterChartData.labels.forEach((label, index) => {
-                        const dateObj = new Date(label);
-                        let newLabel;
-
-                        if (filterType === "daily") {
-                          newLabel = dateObj.toLocaleTimeString();
-                        } else if (filterType === "weekly") {
-                          newLabel = dateObj.toLocaleDateString();
-                        } else {
-                          newLabel = `${dateObj.getFullYear()}-${dateObj.getMonth() + 1}`;
-                        }
-
-                        newLabelsSet.add(newLabel);
-
-                        waterChartData.datasets.forEach((dataset) => {
-                          if (!grouped[dataset.label]) grouped[dataset.label] = {};
-                          if (!grouped[dataset.label][newLabel]) grouped[dataset.label][newLabel] = 0;
-
-                          grouped[dataset.label][newLabel] += dataset.data[index] || 0;
-                        });
-                      });
-
-                      const newLabels = Array.from(newLabelsSet).sort();
-
-                      const newDatasets = waterChartData.datasets.map((dataset) => ({
-                        ...dataset,
-                        data: newLabels.map((l) => grouped[dataset.label]?.[l] || 0),
-                      }));
-
-                      return { labels: newLabels, datasets: newDatasets };
-                    })()}
+                    data={getFilteredChartData()}
                     options={{
                       responsive: true,
+                      maintainAspectRatio: false,
                       plugins: {
                         legend: { position: "top" },
                         title: {
-                          display: true,
-                          text: `Water Usage (${filterType.toUpperCase()})`,
+                          display: false,
                         },
                       },
                       elements: { line: { tension: 0.4 } },
+                      scales: {
+                        x: {
+                          grid: { color: "rgba(0,0,0,0.04)" },
+                          ticks: { font: { size: 11 } },
+                        },
+                        y: {
+                          grid: { color: "rgba(0,0,0,0.04)" },
+                          ticks: { font: { size: 11 } },
+                        },
+                      },
                     }}
                   />
                 ) : (
-                  <p>No irrigation data available</p>
+                  <div className="db-chart-empty">
+                    <span>📊</span>
+                    <p>No irrigation data available</p>
+                  </div>
                 )}
               </div>
-
             </div>
-
           </div>
 
-          <div className="card soil-card">
-            <h3>SOIL MOISTURE DEVICES</h3>
-            {devices.length === 0 && <p>No devices found</p>}
-            <div className="device-grid">
-              {devices.map((device) => (
-                <div key={device.id} className="device-box">
-                  <p><strong>Device:</strong> {device.deviceId}</p>
-                  <h5><strong>Growth Stage:</strong> {device.growthstage}</h5>
-                  <div className="soil-chart">
-                    <CircularProgressbar
-                      value={device.latestReading ? device.latestReading.soilMoisture : 0}
-                      maxValue={100}
-                      text={`${device.latestReading ? device.latestReading.soilMoisture : 0}%`}
-                    />
-                  </div>
-                  <p><strong>Status:</strong>{" "}{device.latestReading ? device.latestReading.soilStatus || "N/A" : "No Data"}</p>
-                </div>
-              ))}
+          {/* RIGHT COLUMN — SOIL MOISTURE */}
+          <div className="db-card db-soil-card">
+            <div className="db-card-header">
+              <h2 className="db-card-title">Soil Moisture Devices</h2>
+              <span className="db-device-count-badge">
+                {devices.length} device{devices.length !== 1 ? "s" : ""}
+              </span>
             </div>
+
+            {devices.length === 0 ? (
+              <div className="db-soil-empty">
+                <span>🌱</span>
+                <p>No devices found for this farm group.</p>
+              </div>
+            ) : (
+              <div className="db-device-grid">
+                {devices.map((device) => {
+                  const moisture = device.latestReading?.soilMoisture ?? 0;
+                  const status = device.latestReading?.soilStatus || "No Data";
+                  const color = getMoistureColor(status);
+
+                  return (
+                    <div className="db-device-card" key={device.id}>
+                      <div className="db-device-top">
+                        <div>
+                          <p className="db-device-id">{device.deviceId}</p>
+                          <span className="db-growth-badge">
+                            {device.growthstage}
+                          </span>
+                        </div>
+                        <div
+                          className="db-status-dot"
+                          style={{ background: color }}
+                          title={status}
+                        />
+                      </div>
+
+                      <div className="db-progress-wrap">
+                        <CircularProgressbar
+                          value={moisture}
+                          maxValue={100}
+                          text={`${moisture}%`}
+                          styles={buildStyles({
+                            pathColor: color,
+                            textColor: "#1a1a1a",
+                            trailColor: "#f0eeea",
+                            textSize: "18px",
+                          })}
+                        />
+                      </div>
+
+                      <div className="db-device-footer">
+                        <span
+                          className="db-soil-status"
+                          style={{ color }}
+                        >
+                          {status}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
         </div>
-
       </main>
-
     </div>
   );
 }

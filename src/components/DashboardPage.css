@@ -1,219 +1,558 @@
-/* RESET */
-html, body {
-  margin: 0;
-  padding: 0;
-  width: 100vw;
-  height: 100vh;
-  overflow-x: hidden;
-  background: #F9F6EE;
-  font-family: Arial, Helvetica, sans-serif;
-}
+/* ═══════════════════════════════════════════
+   DashboardPage.css — SmartAGRI Redesign
+═══════════════════════════════════════════ */
 
 * {
   box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
-/* DASHBOARD LAYOUT */
-.dashboard {
-  display: flex;
+html, body {
   width: 100vw;
   height: 100vh;
-  background: #f6f5ef;
-  overflow: hidden;
+  overflow-x: hidden;
 }
 
-/* SIDEBAR */
-.sidebar {
-  width: 240px;
-  min-width: 240px;
+/* ─── LAYOUT ─── */
+.db-dashboard {
+  display: flex;
+  min-height: 100vh;
+  background: #f5f4f0;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+/* ═══════════════════════════════════════════
+   SIDEBAR
+═══════════════════════════════════════════ */
+.db-sidebar {
+  width: 228px;
+  flex-shrink: 0;
   background: #ffffff;
-  padding: 16px;
-  border-right: 1px solid #e2e2e2;
+  border-right: 1px solid #ece9e4;
   display: flex;
   flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
 }
 
-/* Logo */
-.logo {
-  text-align: center;
-  margin-bottom: 25px;
-  font-size: 24px;
-  font-weight: 700;
-  color: #f39c12;
+.db-logo {
+  font-size: 19px;
+  font-weight: 600;
+  color: #1a1a1a;
+  padding: 24px 22px 22px;
+  letter-spacing: -0.3px;
 }
-.logo .italic {
-  font-style: italic;
-  font-weight: 400;
+
+.db-logo-smart {
+  color: #e91e8c;
 }
 
 /* Profile */
-.profile {
-  text-align: center;
-  margin-bottom: 16px;
-  padding-bottom: 10px;
-  min-height: 120px;
-  border-bottom: 1px solid #e2e2e2;
+.db-profile {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 14px 18px;
+  border-top: 1px solid #ece9e4;
+  border-bottom: 1px solid #ece9e4;
+  margin-bottom: 6px;
 }
-.profile h4 { font-size: 16px; }
-.avatar {
-  width: 70px;
-  height: 70px;
-  background: #ddd;
-  border-radius: 50%;
-  margin: auto;
-  margin-bottom: 10px;
-}
-.role { font-size: 12px; color: green; }
 
-/* SIDEBAR MENU */
-.menu a {
-  text-decoration: none;
-  padding: 10px;
-  border-radius: 6px;
-  color: #333;
-  display: block;
-  border-left: 3px solid transparent;
+.db-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #fce4f0;
+  color: #e91e8c;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
-.menu a:hover, .menu a.active { background: #e8f3ed; }
+
+.db-profile-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a1a1a;
+  line-height: 1.3;
+}
+
+.db-profile-role {
+  font-size: 11px;
+  color: #999;
+}
+
+/* Nav */
+.db-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 12px;
+  flex: 1;
+}
+
+.db-nav a {
+  display: block;
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  color: #666;
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+}
+
+.db-nav a:hover {
+  background: #f5f4f0;
+  color: #1a1a1a;
+}
+
+.db-nav a.active {
+  background: #fce4f0;
+  color: #e91e8c;
+  font-weight: 600;
+}
+
+/* Notification badge */
+.db-notif-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.db-notif-badge {
+  background: #dc2626;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 20px;
+  padding: 2px 7px;
+  min-width: 20px;
+  text-align: center;
+  line-height: 1.4;
+  flex-shrink: 0;
+}
 
 /* Logout */
-.logout {
-  margin-top: auto;
-  padding: 10px;
-  border: none;
-  background: #ff0c85;
-  color: white;
-  border-radius: 6px;
+.db-logout {
+  margin: 14px 12px 18px;
+  padding: 9px 14px;
+  border-radius: 8px;
+  border: 1px solid #e0ddd8;
+  background: none;
+  font-size: 13px;
+  color: #888;
   cursor: pointer;
+  text-align: left;
+  transition: background 0.15s, color 0.15s;
 }
 
-/* MAIN CONTENT */
-.main {
+.db-logout:hover {
+  background: #f5f4f0;
+  color: #444;
+}
+
+/* ═══════════════════════════════════════════
+   MAIN
+═══════════════════════════════════════════ */
+.db-main {
   flex: 1;
-  padding: 20px;
+  padding: 30px 32px;
   overflow-y: auto;
-  max-width: 100%;
-  scrollbar-width: thin;
 }
 
-/* HEADER */
-.header { display: flex; justify-content: space-between; align-items: center; }
-
-/* DASHBOARD GRID */
-.cards {
-  display: grid;
+/* Top bar */
+.db-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
   gap: 20px;
-  margin-bottom: 20px;
+  flex-wrap: wrap;
 }
 
-/* TOP ROW (Farm Group + Soil) */
-.cards.top-row {
-  grid-template-columns: 1fr 2fr;
+.db-page-title {
+  font-size: 21px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 3px;
 }
 
-/* SECOND ROW (Weather + Water) */
-.cards.second-row {
-  grid-template-columns: 1fr 1fr;
+.db-page-sub {
+  font-size: 13px;
+  color: #999;
 }
 
-/* CARD STYLE */
-.card {
+/* Farm Group Selector */
+.db-farm-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-end;
+}
+
+.db-selector-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #aaa;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.db-select {
+  padding: 8px 12px;
+  border: 1px solid #e0ddd8;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #1a1a1a;
+  background: #fff;
+  outline: none;
+  cursor: pointer;
+  min-width: 200px;
+  transition: border-color 0.15s;
+}
+
+.db-select:focus {
+  border-color: #e91e8c;
+}
+
+.db-active-badge {
+  font-size: 11px;
+  padding: 3px 9px;
+  border-radius: 20px;
+  background: #fce4f0;
+  color: #e91e8c;
+  font-weight: 600;
+  align-self: flex-end;
+}
+
+/* ─── STATS ROW ─── */
+.db-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.db-stat {
   background: #ffffff;
-  padding: 18px;
+  border: 1px solid #ece9e4;
   border-radius: 10px;
-  border: 3px solid transparent;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  padding: 16px 18px;
 }
 
-.card.farm-group-card { border-color: #ffeafa; padding: 12px 18px; max-height: 150px; }
-.card.soil-card { border-color: #ffeafa; }
-.card.weather-card { border-color: #ffeafa; padding: 12px 18px; }
-.card.water-card { border-color: #ffeafa; padding: 12px 18px; }
-
-/* SELECT STYLE */
-.farm-select {
-  width: 160px;
-  padding: 6px;
-  margin-top: 8px;
-  border-radius: 6px;
-  border: 1px solid #ddd;
+.db-stat-label {
+  font-size: 12px;
+  color: #aaa;
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
 }
 
-/* WEATHER CONTENT */
-.weather-content {
+.db-stat-val {
+  font-size: 24px;
+  font-weight: 600;
+  color: #1a1a1a;
+  line-height: 1;
+}
+
+/* ═══════════════════════════════════════════
+   CONTENT GRID
+═══════════════════════════════════════════ */
+.db-content-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  align-items: start;
+}
+
+.db-left-col {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* ─── CARD BASE ─── */
+.db-card {
+  background: #ffffff;
+  border: 1px solid #ece9e4;
+  border-radius: 14px;
+  padding: 20px;
+}
+
+.db-card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-}
-.weather-icon {
-  width: 150px;
-  margin-bottom: 15px;
+  margin-bottom: 16px;
 }
 
-/* DEVICE GRID */
-.device-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 15px;
-  margin-top: 10px;
+.db-card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a1a1a;
 }
-.device-box {
-  border: 1px solid #f0bbbb;
-  padding: 15px;
-  border-radius: 8px;
-  background: #fafafa;
-  text-align: center;
-  transition: transform 0.2s ease;
-}
-.device-box:hover { transform: translateY(-3px); }
-.device-box .soil-chart { width: 100px; margin: 10px auto; }
 
-/* WATER ANALYTICS */
-.water-header { display: flex; justify-content: space-between; align-items: center; }
-.water-total { font-size: 20px; font-weight: bold; color: #4caf50; }
-.water-summary {
+.db-placeholder {
+  font-size: 13px;
+  color: #bbb;
+  padding: 20px 0;
+}
+
+/* ═══════════════════════════════════════════
+   WEATHER
+═══════════════════════════════════════════ */
+.db-weather-body {
   display: flex;
   justify-content: space-between;
-  margin: 10px 0;
-  font-size: 14px;
-  color: #555;
+  align-items: center;
+  gap: 12px;
 }
-.water-chart-container { width: 100%; height: 300px; position: relative; }
 
-canvas { max-width: 100%; }
+.db-weather-city {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 4px;
+}
 
-/* CIRCULAR PROGRESS BAR */
-.CircularProgressbar-path { stroke: #4caf50; }
-.CircularProgressbar-text { fill: #333; font-size: 20px; }
-.CircularProgressbar-trail { stroke: #eee; }
+.db-weather-temp {
+  font-size: 36px;
+  font-weight: 600;
+  color: #e91e8c;
+  line-height: 1;
+  margin-bottom: 4px;
+}
 
-/* Water Analytics Buttons */
-.water-period-buttons {
+.db-weather-desc {
+  font-size: 13px;
+  color: #888;
+  text-transform: capitalize;
+  margin-bottom: 12px;
+}
+
+.db-weather-meta {
   display: flex;
-  justify-content: center;
-  gap: 15px;
-  margin: 15px 0;
-}
-.water-period-buttons button {
-  padding: 8px 16px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  background-color: #eee;
-  color: #333;
-  font-weight: 500;
-  transition: all 0.2s ease;
-}
-.water-period-buttons button.active {
-  background-color: #4caf50;
-  color: white;
+  gap: 12px;
+  font-size: 12px;
+  color: #666;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
 }
 
-/* RESPONSIVE */
-@media (max-width: 1024px) {
-  .cards.top-row, .cards.second-row { grid-template-columns: 1fr; }
+.db-weather-date {
+  font-size: 12px;
+  color: #aaa;
+  margin-bottom: 2px;
 }
+
+.db-weather-time {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a1a1a;
+  letter-spacing: 1px;
+}
+
+.db-weather-icon {
+  width: 110px;
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════
+   WATER ANALYTICS
+═══════════════════════════════════════════ */
+.db-water-total {
+  font-size: 18px;
+  font-weight: 600;
+  color: #4caf50;
+}
+
+.db-filter-btns {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.db-filter-btn {
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid #e0ddd8;
+  background: none;
+  font-size: 12px;
+  font-weight: 500;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.db-filter-btn:hover {
+  background: #f5f4f0;
+}
+
+.db-filter-btn.active {
+  background: #4caf50;
+  border-color: #4caf50;
+  color: #fff;
+}
+
+.db-chart-wrap {
+  height: 240px;
+  position: relative;
+}
+
+.db-chart-empty {
+  height: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #bbb;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.db-chart-empty span {
+  font-size: 32px;
+}
+
+/* ═══════════════════════════════════════════
+   SOIL MOISTURE
+═══════════════════════════════════════════ */
+.db-soil-card {
+  height: fit-content;
+}
+
+.db-device-count-badge {
+  font-size: 11px;
+  padding: 3px 9px;
+  border-radius: 20px;
+  background: #e3f2fd;
+  color: #1976d2;
+  font-weight: 600;
+}
+
+.db-soil-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  color: #bbb;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.db-soil-empty span {
+  font-size: 36px;
+}
+
+.db-device-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 14px;
+}
+
+/* Device card */
+.db-device-card {
+  border: 1px solid #ece9e4;
+  border-radius: 12px;
+  padding: 16px;
+  background: #fafaf8;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.db-device-card:hover {
+  border-color: #d4d0c8;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.db-device-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.db-device-id {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 5px;
+}
+
+.db-growth-badge {
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 20px;
+  background: #fce4f0;
+  color: #e91e8c;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.db-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+
+.db-progress-wrap {
+  width: 90px;
+  margin: 0 auto;
+}
+
+.db-device-footer {
+  text-align: center;
+}
+
+.db-soil-status {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 1100px) {
+  .db-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .db-content-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 768px) {
-  .dashboard { flex-direction: column; }
-  .sidebar { width: 100%; min-width: 100%; }
+  .db-sidebar {
+    display: none;
+  }
+
+  .db-main {
+    padding: 20px 16px;
+  }
+
+  .db-topbar {
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .db-farm-selector {
+    align-items: flex-start;
+    width: 100%;
+  }
+
+  .db-select {
+    width: 100%;
+  }
+
+  .db-stats {
+    grid-template-columns: 1fr 1fr;
+  }
 }

@@ -21,17 +21,16 @@ const NotificationPage = ({ fcmMessage }) => {
   const [userName, setUserName] = useState({ first: "", last: "" });
   const [notifications, setNotifications] = useState([]);
 
-  // Modal
   const [showConfirm, setShowConfirm] = useState(false);
   const [notifToDelete, setNotifToDelete] = useState(null);
-
-  // Delete All Modal
   const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
 
-  // ===== Unread count =====
   const unreadCount = notifications.filter((n) => !n.read).length;
 
-  // 🔹 LOGOUT
+  // ─── Helpers ───
+  const getInitials = (first = "", last = "") =>
+    `${first.charAt(0)}${last.charAt(0)}`.toUpperCase();
+
   const handleLogout = async () => {
     try {
       await signOut(auth);
@@ -41,136 +40,98 @@ const NotificationPage = ({ fcmMessage }) => {
     }
   };
 
-  // 🔹 TRACK AUTH STATE
+  // ─── Auth State ───
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setCurrentUser(user);
-      } else {
-        setCurrentUser(null);
-        navigate("/login");
-      }
+      if (user) setCurrentUser(user);
+      else { setCurrentUser(null); navigate("/login"); }
     });
     return () => unsubscribe();
   }, [navigate]);
 
-  // 🔹 FETCH USER NAME
+  // ─── Fetch User Name ───
   useEffect(() => {
     if (!currentUser) return;
-
     const fetchUserName = async () => {
       try {
-        const userDocRef = doc(db, "users", currentUser.uid);
-        const userSnap = await getDoc(userDocRef);
+        const userSnap = await getDoc(doc(db, "users", currentUser.uid));
         if (userSnap.exists()) {
           const data = userSnap.data();
-          setUserName({ first: data.fname || "", last: data.lname || "" });
+          setUserName({ first: data.firstName || data.fname || "", last: data.lastName || data.lname || "" });
         }
       } catch (err) {
         console.error("Error fetching user data:", err);
       }
     };
-
     fetchUserName();
   }, [currentUser]);
 
-  // 🔹 FETCH NOTIFICATIONS
+  // ─── Fetch Notifications ───
   useEffect(() => {
     if (!currentUser) return;
-
     const q = query(
       collection(db, "users", currentUser.uid, "notifications"),
       orderBy("createdAt", "desc")
     );
-
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const list = snapshot.docs.map((docSnap) => {
         const data = docSnap.data();
         return {
           id: docSnap.id,
           ...data,
-          createdAt: data.createdAt?.toDate
-            ? data.createdAt.toDate()
-            : data.createdAt,
+          createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : data.createdAt,
         };
       });
       setNotifications(list);
     });
-
     return () => unsubscribe();
   }, [currentUser]);
 
-  // 🔹 HANDLE FCM MESSAGE
+  // ─── FCM Message ───
   useEffect(() => {
     if (!fcmMessage) return;
-
-    const newNotif = {
-      id: fcmMessage.data?.notifId || new Date().getTime(),
+    setNotifications((prev) => [{
+      id: fcmMessage.data?.notifId || Date.now(),
       title: fcmMessage.notification?.title || "New Notification",
       body: fcmMessage.notification?.body || "",
       type: "alert",
       read: false,
       deviceId: fcmMessage.data?.deviceId || null,
       createdAt: new Date(),
-    };
-
-    setNotifications((prev) => [newNotif, ...prev]);
+    }, ...prev]);
   }, [fcmMessage]);
 
-  // 🔹 MARK ONE AS READ
+  // ─── Actions ───
   const markAsRead = async (id) => {
     try {
-      await updateDoc(
-        doc(db, "users", currentUser.uid, "notifications", id),
-        { read: true }
-      );
-    } catch (error) {
-      console.error("Error marking notification as read:", error);
-    }
+      await updateDoc(doc(db, "users", currentUser.uid, "notifications", id), { read: true });
+    } catch (error) { console.error(error); }
   };
 
-  // 🔹 DELETE ONE NOTIF
   const deleteNotification = async (id) => {
     try {
-      await deleteDoc(
-        doc(db, "users", currentUser.uid, "notifications", id)
-      );
-    } catch (error) {
-      console.error("Error deleting notification:", error);
-    }
+      await deleteDoc(doc(db, "users", currentUser.uid, "notifications", id));
+    } catch (error) { console.error(error); }
   };
 
-  // 🔹 DELETE ALL NOTIFS
   const deleteAllNotifications = async () => {
     if (!currentUser) return;
     try {
-      const notifRef = collection(db, "users", currentUser.uid, "notifications");
-      const snapshot = await getDocs(notifRef);
-      const deletes = snapshot.docs.map((docSnap) =>
-        deleteDoc(doc(db, "users", currentUser.uid, "notifications", docSnap.id))
-      );
-      await Promise.all(deletes);
-    } catch (error) {
-      console.error("Error deleting all notifications:", error);
-    }
+      const snapshot = await getDocs(collection(db, "users", currentUser.uid, "notifications"));
+      await Promise.all(snapshot.docs.map((d) =>
+        deleteDoc(doc(db, "users", currentUser.uid, "notifications", d.id))
+      ));
+    } catch (error) { console.error(error); }
   };
 
-  // 🔹 MARK ALL AS READ
   const markAllAsRead = async () => {
     if (!currentUser) return;
     try {
-      const notifRef = collection(db, "users", currentUser.uid, "notifications");
-      const snapshot = await getDocs(notifRef);
-      const updates = snapshot.docs.map((docSnap) =>
-        updateDoc(
-          doc(db, "users", currentUser.uid, "notifications", docSnap.id),
-          { read: true }
-        )
-      );
-      await Promise.all(updates);
-    } catch (error) {
-      console.error("Error marking all as read:", error);
-    }
+      const snapshot = await getDocs(collection(db, "users", currentUser.uid, "notifications"));
+      await Promise.all(snapshot.docs.map((d) =>
+        updateDoc(doc(db, "users", currentUser.uid, "notifications", d.id), { read: true })
+      ));
+    } catch (error) { console.error(error); }
   };
 
   const getColor = (type) => {
@@ -178,7 +139,7 @@ const NotificationPage = ({ fcmMessage }) => {
       case "alert": return "#fb8c00";
       case "update": return "#43a047";
       case "weatherUpdate": return "#00acc1";
-      default: return "#757575";
+      default: return "#aaa";
     }
   };
 
@@ -186,32 +147,40 @@ const NotificationPage = ({ fcmMessage }) => {
 
   return (
     <div className="rf-dashboard">
+
+      {/* ── SIDEBAR ── */}
       <aside className="rf-sidebar">
-        <h2 className="rf-logo">
+        <div className="rf-logo">
           <span className="smart">Smart</span>AGRI
-        </h2>
+        </div>
 
         <div className="rf-profile">
-          <div className="rf-avatar"></div>
-          <h4>{userName.first || "Loading..."} {userName.last}</h4>
-          <p>Registered Admin</p>
+          <div className="rf-avatar">
+            {userName.first ? getInitials(userName.first, userName.last) : "AD"}
+          </div>
+          <div>
+            <p className="rf-profile-name">
+              {userName.first ? `${userName.first} ${userName.last}` : "Loading..."}
+            </p>
+            <p className="rf-profile-role">Registered Admin</p>
+          </div>
         </div>
 
         <nav className="rf-menu">
           <NavLink to="/dashboard">Dashboard</NavLink>
           <NavLink to="/register-farmer">Register Farmer</NavLink>
           <NavLink to="/farmers">Farmers</NavLink>
-
-          {/* ===== Notification link with unread badge ===== */}
-          <NavLink to="/notifications" className="active notif-nav-link">
-            Notification
-            {unreadCount > 0 && (
-              <span className="notif-badge">{unreadCount > 99 ? "99+" : unreadCount}</span>
-            )}
+          <NavLink to="/notifications" className="active">
+            <span className="notif-nav-link">
+              Notification
+              {unreadCount > 0 && (
+                <span className="notif-badge">
+                  {unreadCount > 99 ? "99+" : unreadCount}
+                </span>
+              )}
+            </span>
           </NavLink>
-
           <NavLink to="/farm-group">Farm Group</NavLink>
-          <hr />
         </nav>
 
         <button className="rf-logout" onClick={handleLogout}>
@@ -219,14 +188,19 @@ const NotificationPage = ({ fcmMessage }) => {
         </button>
       </aside>
 
+      {/* ── MAIN ── */}
       <main className="rf-main">
-        <div className="notif-actions">
-          {/* ===== Unread count summary ===== */}
-          {unreadCount > 0 && (
-            <p className="unread-summary">
-              You have <strong>{unreadCount}</strong> unread notification{unreadCount > 1 ? "s" : ""}
+
+        {/* TOP BAR */}
+        <div className="notif-topbar">
+          <div>
+            <h1 className="notif-page-title">Notifications</h1>
+            <p className="notif-page-sub">
+              {unreadCount > 0
+                ? `You have ${unreadCount} unread notification${unreadCount > 1 ? "s" : ""}`
+                : "You're all caught up"}
             </p>
-          )}
+          </div>
 
           <div className="notif-action-buttons">
             <button className="mark-all-btn" onClick={markAllAsRead}>
@@ -242,19 +216,23 @@ const NotificationPage = ({ fcmMessage }) => {
           </div>
         </div>
 
+        {/* NOTIFICATION LIST */}
         <div className="timeline-container">
           {notifications.length === 0 ? (
-            <p className="no-notifications">No notifications yet.</p>
+            <p className="no-notifications">
+              <span style={{ fontSize: "36px" }}>🔔</span>
+              No notifications yet.
+            </p>
           ) : (
             notifications.map((notif) => (
               <div
                 key={notif.id}
-                className={`timeline-item ${notif.read ? "read" : ""}`}
+                className={`timeline-item${notif.read ? " read" : ""}`}
               >
                 <div
                   className="timeline-dot"
                   style={{ backgroundColor: getColor(notif.type) }}
-                ></div>
+                />
 
                 <div className="timeline-content">
                   <h4>{notif.title}</h4>
@@ -278,7 +256,11 @@ const NotificationPage = ({ fcmMessage }) => {
                     )}
                     <button
                       className="delete-btn"
-                      onClick={(e) => { e.stopPropagation(); setNotifToDelete(notif.id); setShowConfirm(true); }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setNotifToDelete(notif.id);
+                        setShowConfirm(true);
+                      }}
                     >
                       Delete
                     </button>
@@ -290,7 +272,7 @@ const NotificationPage = ({ fcmMessage }) => {
         </div>
       </main>
 
-      {/* ===== Delete One Confirm Modal ===== */}
+      {/* ── DELETE ONE MODAL ── */}
       {showConfirm && (
         <div className="confirm-modal">
           <div className="confirm-content">
@@ -298,9 +280,13 @@ const NotificationPage = ({ fcmMessage }) => {
             <div className="confirm-buttons">
               <button
                 className="read-btn"
-                onClick={() => { deleteNotification(notifToDelete); setShowConfirm(false); setNotifToDelete(null); }}
+                onClick={() => {
+                  deleteNotification(notifToDelete);
+                  setShowConfirm(false);
+                  setNotifToDelete(null);
+                }}
               >
-                Yes
+                Yes, Delete
               </button>
               <button
                 className="delete-btn"
@@ -313,7 +299,7 @@ const NotificationPage = ({ fcmMessage }) => {
         </div>
       )}
 
-      {/* ===== Delete All Confirm Modal ===== */}
+      {/* ── DELETE ALL MODAL ── */}
       {showDeleteAllConfirm && (
         <div className="confirm-modal">
           <div className="confirm-content">
