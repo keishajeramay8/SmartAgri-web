@@ -1,0 +1,495 @@
+/* ═══════════════════════════════════════════
+   ProfilePage.css — SmartAGRI (matches DashboardPage)
+═══════════════════════════════════════════ */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ─── LAYOUT ─── */
+.pf-dashboard {
+  display: flex;
+  min-height: 100vh;
+  background: #f5f4f0;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+/* ═══════════════════════════════════════════
+   SIDEBAR  (identical to db-sidebar)
+═══════════════════════════════════════════ */
+.pf-sidebar {
+  width: 228px;
+  flex-shrink: 0;
+  background: #ffffff;
+  border-right: 1px solid #ece9e4;
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.pf-logo {
+  font-size: 19px;
+  font-weight: 600;
+  color: #1a1a1a;
+  padding: 24px 22px 22px;
+  letter-spacing: -0.3px;
+}
+
+.pf-logo-smart { color: #e91e8c; }
+
+.pf-profile {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 14px 18px;
+  border-top: 1px solid #ece9e4;
+  border-bottom: 1px solid #ece9e4;
+  margin-bottom: 6px;
+}
+
+.pf-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #fce4f0;
+  color: #e91e8c;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.pf-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.pf-profile-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a1a1a;
+  line-height: 1.3;
+}
+
+.pf-profile-role { font-size: 11px; color: #999; }
+
+.pf-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 12px;
+  flex: 1;
+}
+
+.pf-nav a {
+  display: block;
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  color: #666;
+  text-decoration: none;
+  transition: background 0.15s, color 0.15s;
+}
+
+.pf-nav a:hover { background: #f5f4f0; color: #1a1a1a; }
+
+.pf-nav a.active {
+  background: #fce4f0;
+  color: #e91e8c;
+  font-weight: 600;
+}
+
+.pf-notif-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.pf-notif-badge {
+  background: #dc2626;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 20px;
+  padding: 2px 7px;
+  min-width: 20px;
+  text-align: center;
+  line-height: 1.4;
+  flex-shrink: 0;
+}
+
+.pf-logout {
+  margin: 14px 12px 18px;
+  padding: 9px 14px;
+  border-radius: 8px;
+  border: 1px solid #e0ddd8;
+  background: none;
+  font-size: 13px;
+  color: #888;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s, color 0.15s;
+}
+
+.pf-logout:hover { background: #f5f4f0; color: #444; }
+
+/* ═══════════════════════════════════════════
+   MAIN
+═══════════════════════════════════════════ */
+.pf-main {
+  flex: 1;
+  padding: 30px 32px;
+  overflow-y: auto;
+}
+
+.pf-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.pf-page-title {
+  font-size: 21px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin-bottom: 3px;
+}
+
+.pf-page-sub { font-size: 13px; color: #999; }
+
+/* ═══════════════════════════════════════════
+   CONTENT GRID
+═══════════════════════════════════════════ */
+.pf-content-grid {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 18px;
+  align-items: start;
+}
+
+.pf-left-col {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.pf-right-col {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* ─── CARD BASE ─── */
+.pf-card {
+  background: #ffffff;
+  border: 1px solid #ece9e4;
+  border-radius: 14px;
+  padding: 20px;
+}
+
+.pf-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.pf-card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+/* ═══════════════════════════════════════════
+   AVATAR CARD
+═══════════════════════════════════════════ */
+.pf-avatar-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.pf-big-avatar-wrap {
+  position: relative;
+  width: 90px;
+  height: 90px;
+  margin-bottom: 6px;
+}
+
+.pf-big-avatar-img {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #fce4f0;
+}
+
+.pf-big-avatar-initials {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: #fce4f0;
+  color: #e91e8c;
+  font-size: 26px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid #f8d1e8;
+}
+
+.pf-photo-change-btn {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #e91e8c;
+  color: #fff;
+  border: none;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+  line-height: 1;
+}
+
+.pf-photo-change-btn:hover { background: #c9186f; }
+
+.pf-big-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a1a;
+  line-height: 1.3;
+}
+
+.pf-big-role {
+  font-size: 11px;
+  color: #aaa;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.pf-big-email {
+  font-size: 12px;
+  color: #999;
+  word-break: break-all;
+}
+
+.pf-edit-btn {
+  margin-top: 6px;
+  padding: 8px 20px;
+  border-radius: 20px;
+  border: 1.5px solid #e91e8c;
+  background: none;
+  color: #e91e8c;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.pf-edit-btn:hover {
+  background: #e91e8c;
+  color: #fff;
+}
+
+/* ─── INFO CARD ─── */
+.pf-info-card { padding: 18px 20px; }
+
+.pf-info-label {
+  font-size: 11px;
+  color: #aaa;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-bottom: 3px;
+}
+
+.pf-info-val {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #1a1a1a;
+  line-height: 1.4;
+}
+
+/* ═══════════════════════════════════════════
+   FORM
+═══════════════════════════════════════════ */
+.pf-editing-badge {
+  font-size: 11px;
+  padding: 3px 9px;
+  border-radius: 20px;
+  background: #fce4f0;
+  color: #e91e8c;
+  font-weight: 600;
+}
+
+.pf-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 18px;
+}
+
+.pf-field { display: flex; flex-direction: column; gap: 5px; }
+
+.pf-field--full { grid-column: 1 / -1; }
+
+.pf-field-label {
+  font-size: 11px;
+  color: #aaa;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  font-weight: 600;
+}
+
+.pf-field-val {
+  font-size: 14px;
+  color: #1a1a1a;
+  padding: 8px 0;
+  border-bottom: 1px solid #ece9e4;
+}
+
+.pf-field-val--muted { color: #999; }
+
+.pf-input {
+  padding: 8px 12px;
+  border: 1px solid #e0ddd8;
+  border-radius: 8px;
+  font-size: 13.5px;
+  color: #1a1a1a;
+  background: #fff;
+  outline: none;
+  transition: border-color 0.15s;
+  width: 100%;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.pf-input:focus { border-color: #e91e8c; }
+
+.pf-input::placeholder { color: #bbb; }
+
+.pf-action-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+.pf-save-btn {
+  padding: 9px 22px;
+  border-radius: 8px;
+  border: none;
+  background: #e91e8c;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.pf-save-btn:hover:not(:disabled) { background: #c9186f; }
+
+.pf-save-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.pf-cancel-btn {
+  padding: 9px 18px;
+  border-radius: 8px;
+  border: 1px solid #e0ddd8;
+  background: none;
+  font-size: 13px;
+  color: #888;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.pf-cancel-btn:hover { background: #f5f4f0; color: #444; }
+
+/* ─── MESSAGES ─── */
+.pf-msg {
+  font-size: 13px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-bottom: 14px;
+  font-weight: 500;
+}
+
+.pf-msg--ok {
+  background: #e8f5e9;
+  color: #2e7d32;
+  border: 1px solid #c8e6c9;
+}
+
+.pf-msg--err {
+  background: #fce4f0;
+  color: #b3126e;
+  border: 1px solid #f8bdd8;
+}
+
+/* ─── SECURITY / PASSWORD ─── */
+.pf-pw-hint { font-size: 13px; color: #aaa; }
+
+.pf-toggle-pw-btn {
+  padding: 7px 14px;
+  border-radius: 8px;
+  border: 1px solid #e0ddd8;
+  background: none;
+  font-size: 12.5px;
+  color: #666;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.pf-toggle-pw-btn:hover {
+  background: #fce4f0;
+  color: #e91e8c;
+  border-color: #e91e8c;
+}
+
+.pf-pw-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 1100px) {
+  .pf-content-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pf-left-col {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .pf-avatar-card { flex: 1; min-width: 200px; }
+  .pf-info-card   { flex: 1; min-width: 200px; }
+}
+
+@media (max-width: 768px) {
+  .pf-sidebar { display: none; }
+
+  .pf-main { padding: 20px 16px; }
+
+  .pf-form-grid { grid-template-columns: 1fr; }
+
+  .pf-left-col { flex-direction: column; }
+}

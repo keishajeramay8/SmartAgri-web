@@ -304,13 +304,31 @@ export default function DashboardPage() {
     return { labels: newLabels, datasets: newDatasets };
   };
 
-  // MOISTURE STATUS COLOR
+  // MOISTURE STATUS
+  const getMoistureClass = (status = "") => {
+    const s = status.toLowerCase();
+    if (s.includes("wet") || s.includes("high")) return "moisture--wet";
+    if (s.includes("dry") || s.includes("low")) return "moisture--dry";
+    return "moisture--optimal";
+  };
+
   const getMoistureColor = (status = "") => {
     const s = status.toLowerCase();
     if (s.includes("wet") || s.includes("high")) return "#1976d2";
     if (s.includes("dry") || s.includes("low")) return "#e91e8c";
     return "#4caf50";
   };
+
+  // DEVICE ONLINE / OFFLINE
+  const getDeviceStatus = (latestReading) => {
+    if (!latestReading?.time) return "offline";
+    const lastSeen = latestReading.time.toDate();
+    const diffMinutes = (Date.now() - lastSeen.getTime()) / 1000 / 60;
+    return diffMinutes <= 5 ? "active" : "offline";
+  };
+
+  // ✅ Helper for NavLink className — lets React Router handle active state
+  const navClass = ({ isActive }) => isActive ? "active" : undefined;
 
   return (
     <div className="db-dashboard">
@@ -326,19 +344,18 @@ export default function DashboardPage() {
           </div>
           <div>
             <p className="db-profile-name">
-              {userName.first
-                ? `${userName.first} ${userName.last}`
-                : "Loading..."}
+              {userName.first ? `${userName.first} ${userName.last}` : "Loading..."}
             </p>
             <p className="db-profile-role">Registered Admin</p>
           </div>
         </div>
 
+        {/* ✅ All NavLinks now use the navClass helper — no more hardcoded "active" */}
         <nav className="db-nav">
-          <NavLink to="/dashboard" className="active">Dashboard</NavLink>
-          <NavLink to="/register-farmer">Register Farmer</NavLink>
-          <NavLink to="/farmers">Farmers</NavLink>
-          <NavLink to="/notifications">
+          <NavLink to="/dashboard" className={navClass} end>Dashboard</NavLink>
+          <NavLink to="/register-farmer" className={navClass}>Register Farmer</NavLink>
+          <NavLink to="/farmers" className={navClass}>Farmers</NavLink>
+          <NavLink to="/notifications" className={navClass}>
             <span className="db-notif-link">
               Notification
               {unreadCount > 0 && (
@@ -348,7 +365,8 @@ export default function DashboardPage() {
               )}
             </span>
           </NavLink>
-          <NavLink to="/farm-group">Farm Group</NavLink>
+          <NavLink to="/farm-group" className={navClass}>Farm Group</NavLink>
+          <NavLink to="/profile" className={navClass}>Profile</NavLink>
         </nav>
 
         <button className="db-logout" onClick={handleLogout}>
@@ -466,6 +484,26 @@ export default function DashboardPage() {
                 </span>
               </div>
 
+              {/* DATE / TIME ROW */}
+              <div className="db-datetime-row">
+                <div className="db-datetime-block">
+                  <span className="db-dt-label">Date</span>
+                  <span className="db-dt-value">{currentDate || "—"}</span>
+                </div>
+                <div className="db-dt-divider" />
+                <div className="db-datetime-block">
+                  <span className="db-dt-label">Time</span>
+                  <span className="db-dt-value db-dt-mono">
+                    {currentTime || "—"}
+                  </span>
+                </div>
+                <div className="db-dt-divider" />
+                <div className="db-datetime-block">
+                  <span className="db-dt-label">Last refreshed</span>
+                  <span className="db-dt-value">every 10s</span>
+                </div>
+              </div>
+
               <div className="db-filter-btns">
                 {["daily", "weekly", "monthly"].map((f) => (
                   <button
@@ -487,9 +525,7 @@ export default function DashboardPage() {
                       maintainAspectRatio: false,
                       plugins: {
                         legend: { position: "top" },
-                        title: {
-                          display: false,
-                        },
+                        title: { display: false },
                       },
                       elements: { line: { tension: 0.4 } },
                       scales: {
@@ -499,7 +535,10 @@ export default function DashboardPage() {
                         },
                         y: {
                           grid: { color: "rgba(0,0,0,0.04)" },
-                          ticks: { font: { size: 11 } },
+                          ticks: {
+                            font: { size: 11 },
+                            callback: (v) => v + " L",
+                          },
                         },
                       },
                     }}
@@ -511,6 +550,27 @@ export default function DashboardPage() {
                   </div>
                 )}
               </div>
+
+              {/* PER-DEVICE MINI STATS */}
+              {devices.length > 0 && (
+                <div className="db-device-stat-row">
+                  {devices.map((device) => {
+                    const total = device.irrigationPoints.reduce(
+                      (s, p) => s + p.volume,
+                      0
+                    );
+                    return (
+                      <div className="db-device-stat" key={device.id}>
+                        <p className="db-device-stat-label">{device.deviceId}</p>
+                        <p className="db-device-stat-val">
+                          {total.toFixed(1)}{" "}
+                          <span className="db-device-stat-unit">L</span>
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
 
@@ -533,24 +593,22 @@ export default function DashboardPage() {
                 {devices.map((device) => {
                   const moisture = device.latestReading?.soilMoisture ?? 0;
                   const status = device.latestReading?.soilStatus || "No Data";
+                  const moistureClass = getMoistureClass(status);
                   const color = getMoistureColor(status);
+                  const deviceStatus = getDeviceStatus(device.latestReading);
 
                   return (
                     <div className="db-device-card" key={device.id}>
-                      <div className="db-device-top">
-                        <div>
-                          <p className="db-device-id">{device.deviceId}</p>
-                          <span className="db-growth-badge">
-                            {device.growthstage}
-                          </span>
-                        </div>
-                        <div
-                          className="db-status-dot"
-                          style={{ background: color }}
-                          title={status}
-                        />
+
+                      {/* ROW 1: Device ID + Active/Offline badge */}
+                      <div className="db-device-header">
+                        <p className="db-device-id">{device.deviceId}</p>
+                        <span className={`db-online-badge db-online-badge--${deviceStatus}`}>
+                          {deviceStatus === "active" ? "● Active" : "○ Offline"}
+                        </span>
                       </div>
 
+                      {/* ROW 2: Circular progress */}
                       <div className="db-progress-wrap">
                         <CircularProgressbar
                           value={moisture}
@@ -565,14 +623,16 @@ export default function DashboardPage() {
                         />
                       </div>
 
+                      {/* ROW 3: Soil status + Growth stage */}
                       <div className="db-device-footer">
-                        <span
-                          className="db-soil-status"
-                          style={{ color }}
-                        >
+                        <span className={`db-soil-status ${moistureClass}`}>
                           {status}
                         </span>
+                        <span className="db-growth-badge">
+                          {device.growthstage}
+                        </span>
                       </div>
+
                     </div>
                   );
                 })}

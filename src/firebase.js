@@ -3,8 +3,8 @@ import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getMessaging, getToken, onMessage } from "firebase/messaging";
+import { getStorage } from "firebase/storage";   // ← ADD THIS
 
-// 🔑 Your Firebase config
 const firebaseConfig = {
   apiKey: "AIzaSyANI1nMfarUwm08XwccpVg8zqSsAqZjytA",
   authDomain: "smartagri-62ae1.firebaseapp.com",
@@ -16,23 +16,19 @@ const firebaseConfig = {
   measurementId: "G-FVCNR88T6C"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Export Auth & Firestore
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+export const storage = getStorage(app);          // ← ADD THIS
 
-// Initialize Messaging
 export const messaging = getMessaging(app);
 
-// Get FCM token
 export const getFcmToken = async () => {
   try {
     const currentToken = await getToken(messaging, {
       vapidKey: "BKXU8_EowIW65S8YcPbKUDr-6_xGE9mq9EqZ5QULArgkkPoYUW7AmcfhoeT5xPcvmtP2m8Sy4RVRasWBvXrjloU"
     });
-
     if (currentToken) {
       console.log("FCM token:", currentToken);
       return currentToken;
@@ -46,7 +42,6 @@ export const getFcmToken = async () => {
   }
 };
 
-// Listen for messages when the app is in the foreground
 export const onMessageListener = (callback) => {
   return onMessage(messaging, (payload) => {
     console.log("FCM foreground message received: ", payload);

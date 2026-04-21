@@ -85,9 +85,10 @@ export default function LandingPage() {
         <span className="lp-tag">About SmartAGRI</span>
         <h2>Intelligent Farming, <span className="lp-gold">Simplified.</span></h2>
         <p>
-          <strong>SmartAGRI</strong> is a precision agriculture platform for
-          farmers. It connects IoT soil sensors to a cloud dashboard for real-time
-          monitoring and automated irrigation — no guesswork, no waste.
+          <strong>SmartAGRI</strong> SMARTAGRI is a soil moisture-based watering system 
+          designed for chrysanthemum flowers. It uses IoT sensors to monitor soil conditions
+           in real time and automate irrigation—ensuring optimal growth with no guesswork
+            and no water waste.
         </p>
       </section>
 
