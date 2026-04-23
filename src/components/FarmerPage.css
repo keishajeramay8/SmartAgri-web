@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;1,400;1,700&family=DM+Sans:wght@300;400;500;600&display=swap');
+
 /* ═══════════════════════════════════════════
    FarmerPage.css — SmartAGRI Redesign
 ═══════════════════════════════════════════ */
@@ -30,14 +32,19 @@
 
 .fp-logo {
   font-size: 19px;
-  font-weight: 600;
-  color: #1a1a1a;
+  font-weight: 700;
+  color: #F4A300;
   padding: 24px 22px 22px;
   letter-spacing: -0.3px;
+  text-align: center;
+  font-family: 'DM Sans', sans-serif;
 }
 
 .fp-logo-smart {
-  color: #e91e8c;
+  color: #F4A300;
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-weight: 400;
 }
 
 /* Profile block */
@@ -138,7 +145,7 @@
   font-size: 13px;
   color: #888;
   cursor: pointer;
-  text-align: left;
+  text-align: center;
   transition: background 0.15s, color 0.15s;
 }
 
@@ -151,25 +158,27 @@
    MAIN
 ═══════════════════════════════════════════ */
 .fp-main {
-  flex: 1;
-  padding: 30px 32px;
-  overflow: auto;
+ flex: 1;
+  padding: 18px 32px 30px;
+  overflow-y: auto;
 }
 
 /* Top bar */
 .fp-topbar {
-  display: flex;
+   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   margin-bottom: 24px;
-  gap: 16px;
+  gap: 20px;
+  flex-wrap: wrap;
 }
 
 .fp-page-title {
   font-size: 21px;
-  font-weight: 600;
+  font-weight: 800;
   color: #1a1a1a;
   margin-bottom: 3px;
+  letter-spacing: 0.5px;
 }
 
 .fp-page-sub {

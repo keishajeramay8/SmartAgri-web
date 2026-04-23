@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;1,400;1,700&family=DM+Sans:wght@300;400;500;600&display=swap');
+
 /* ═══════════════════════════════════════════
    RegisterFarmerPage.css — SmartAGRI Redesign
    Matches DashboardPage design system
@@ -24,7 +26,7 @@ html, body {
 }
 
 /* ═══════════════════════════════════════════
-   SIDEBAR — matches db-sidebar
+   SIDEBAR
 ═══════════════════════════════════════════ */
 .f-sidebar {
   width: 228px;
@@ -40,16 +42,19 @@ html, body {
 
 .f-logo {
   font-size: 19px;
-  font-weight: 600;
-  color: #1a1a1a;
+  font-weight: 700;
+  color: #F4A300;
   padding: 24px 22px 22px;
   letter-spacing: -0.3px;
+  text-align: center;
+  font-family: 'DM Sans', sans-serif;
 }
 
 .f-logo .smart {
-  color: #e91e8c;
-  font-style: normal;
-  font-weight: 600;
+  color: #F4A300;
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-weight: 400;
 }
 
 /* Profile */
@@ -150,7 +155,7 @@ html, body {
   font-size: 13px;
   color: #888;
   cursor: pointer;
-  text-align: left;
+  text-align: center;
   transition: background 0.15s, color 0.15s;
 }
 
@@ -164,7 +169,7 @@ html, body {
 ═══════════════════════════════════════════ */
 .f-main {
   flex: 1;
-  padding: 30px 32px;
+  padding: 18px 32px 30px;
   overflow-y: auto;
 }
 
@@ -172,7 +177,7 @@ html, body {
 .f-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   margin-bottom: 24px;
   gap: 20px;
   flex-wrap: wrap;
@@ -180,9 +185,10 @@ html, body {
 
 .f-page-title {
   font-size: 21px;
-  font-weight: 600;
+  font-weight: 800;
   color: #1a1a1a;
   margin-bottom: 3px;
+  letter-spacing: 0.5px;
 }
 
 .f-page-sub {
@@ -190,7 +196,7 @@ html, body {
   color: #999;
 }
 
-/* Stats row (optional — mirrors db-stats style if needed) */
+/* Stats row */
 .f-stats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -221,7 +227,7 @@ html, body {
 }
 
 /* ═══════════════════════════════════════════
-   TABLE CARD — matches db-card
+   TABLE CARD
 ═══════════════════════════════════════════ */
 .f-table-section {
   background: #ffffff;
@@ -361,19 +367,12 @@ html, body {
 
 /* ─── RESPONSIVE ─── */
 @media (max-width: 1100px) {
-  .f-stats {
-    grid-template-columns: repeat(2, 1fr);
-  }
+  .f-stats { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 768px) {
-  .f-sidebar {
-    display: none;
-  }
-
-  .f-main {
-    padding: 20px 16px;
-  }
+  .f-sidebar { display: none; }
+  .f-main { padding: 20px 16px; }
 
   .f-table-header,
   .f-row {
@@ -385,7 +384,5 @@ html, body {
     display: none;
   }
 
-  .f-stats {
-    grid-template-columns: 1fr 1fr;
-  }
+  .f-stats { grid-template-columns: 1fr 1fr; }
 }

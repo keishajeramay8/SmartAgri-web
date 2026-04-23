@@ -1,14 +1,17 @@
-/* ═══════════════════════════════════════════
-   ProfilePage.css — SmartAGRI (matches DashboardPage)
-═══════════════════════════════════════════ */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;1,400;1,700&family=DM+Sans:wght@300;400;500;600&display=swap');
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+/* ═══════════════════════════════════════════════
+   ProfilePage.css  —  SmartAGRI (Dashboard Theme)
+═══════════════════════════════════════════════ */
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  width: 100vw;
+  height: 100vh;
+  overflow-x: hidden;
 }
 
-/* ─── LAYOUT ─── */
 .pf-dashboard {
   display: flex;
   min-height: 100vh;
@@ -16,9 +19,9 @@
   font-family: 'Segoe UI', sans-serif;
 }
 
-/* ═══════════════════════════════════════════
-   SIDEBAR  (identical to db-sidebar)
-═══════════════════════════════════════════ */
+/* ════════════════════════════════
+   SIDEBAR
+════════════════════════════════ */
 .pf-sidebar {
   width: 228px;
   flex-shrink: 0;
@@ -33,13 +36,20 @@
 
 .pf-logo {
   font-size: 19px;
-  font-weight: 600;
-  color: #1a1a1a;
+  font-weight: 700;
+  color: #F4A300;
   padding: 24px 22px 22px;
   letter-spacing: -0.3px;
+  text-align: center;
+  font-family: 'DM Sans', sans-serif;
 }
 
-.pf-logo-smart { color: #e91e8c; }
+.pf-logo-smart {
+  color: #F4A300;
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-weight: 400;
+}
 
 .pf-profile {
   display: flex;
@@ -62,25 +72,24 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
   overflow: hidden;
+  flex-shrink: 0;
 }
-
 .pf-avatar-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 50%;
 }
-
 .pf-profile-name {
   font-size: 13px;
   font-weight: 600;
   color: #1a1a1a;
   line-height: 1.3;
 }
-
-.pf-profile-role { font-size: 11px; color: #999; }
+.pf-profile-role {
+  font-size: 11px;
+  color: #999;
+}
 
 .pf-nav {
   display: flex;
@@ -89,7 +98,6 @@
   padding: 6px 12px;
   flex: 1;
 }
-
 .pf-nav a {
   display: block;
   padding: 9px 12px;
@@ -99,9 +107,10 @@
   text-decoration: none;
   transition: background 0.15s, color 0.15s;
 }
-
-.pf-nav a:hover { background: #f5f4f0; color: #1a1a1a; }
-
+.pf-nav a:hover {
+  background: #f5f4f0;
+  color: #1a1a1a;
+}
 .pf-nav a.active {
   background: #fce4f0;
   color: #e91e8c;
@@ -114,7 +123,6 @@
   justify-content: space-between;
   width: 100%;
 }
-
 .pf-notif-badge {
   background: #dc2626;
   color: #fff;
@@ -137,62 +145,45 @@
   font-size: 13px;
   color: #888;
   cursor: pointer;
-  text-align: left;
+  text-align: center;
   transition: background 0.15s, color 0.15s;
 }
+.pf-logout:hover {
+  background: #f5f4f0;
+  color: #444;
+}
 
-.pf-logout:hover { background: #f5f4f0; color: #444; }
-
-/* ═══════════════════════════════════════════
+/* ════════════════════════════════
    MAIN
-═══════════════════════════════════════════ */
+════════════════════════════════ */
 .pf-main {
-  flex: 1;
-  padding: 30px 32px;
+flex: 1;
+  padding: 18px 32px 30px;
   overflow-y: auto;
 }
 
-.pf-topbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 24px;
-  gap: 20px;
-  flex-wrap: wrap;
-}
-
+.pf-topbar { margin-bottom: 24px; }
 .pf-page-title {
   font-size: 21px;
-  font-weight: 600;
+  font-weight: 800;
   color: #1a1a1a;
   margin-bottom: 3px;
+  letter-spacing: 0.5px;
+}
+.pf-page-sub {
+  font-size: 13px;
+  color: #999;
 }
 
-.pf-page-sub { font-size: 13px; color: #999; }
-
-/* ═══════════════════════════════════════════
-   CONTENT GRID
-═══════════════════════════════════════════ */
+/* ── Content grid ── */
 .pf-content-grid {
   display: grid;
-  grid-template-columns: 260px 1fr;
+  grid-template-columns: 300px 1fr;
   gap: 18px;
   align-items: start;
 }
 
-.pf-left-col {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-
-.pf-right-col {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-
-/* ─── CARD BASE ─── */
+/* ── Card base ── */
 .pf-card {
   background: #ffffff;
   border: 1px solid #ece9e4;
@@ -200,296 +191,269 @@
   padding: 20px;
 }
 
-.pf-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-}
+/* ════════════════════════════════
+   LEFT COLUMN
+════════════════════════════════ */
+.pf-left-col { display: flex; flex-direction: column; gap: 18px; }
 
-.pf-card-title {
-  font-size: 15px;
-  font-weight: 600;
-  color: #1a1a1a;
-}
-
-/* ═══════════════════════════════════════════
-   AVATAR CARD
-═══════════════════════════════════════════ */
 .pf-avatar-card {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
   text-align: center;
+  gap: 8px;
 }
 
 .pf-big-avatar-wrap {
   position: relative;
   width: 90px;
   height: 90px;
-  margin-bottom: 6px;
+  border-radius: 50%;
+  overflow: hidden;
+  margin-bottom: 4px;
+  background: #fce4f0;
+  flex-shrink: 0;
 }
+.pf-big-avatar-wrap--editable { cursor: pointer; }
+.pf-big-avatar-wrap--editable:hover .pf-avatar-overlay { opacity: 1; }
 
 .pf-big-avatar-img {
-  width: 90px;
-  height: 90px;
-  border-radius: 50%;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
-  border: 3px solid #fce4f0;
 }
-
 .pf-big-avatar-initials {
-  width: 90px;
-  height: 90px;
-  border-radius: 50%;
-  background: #fce4f0;
-  color: #e91e8c;
-  font-size: 26px;
-  font-weight: 600;
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 3px solid #f8d1e8;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #e91e8c;
 }
 
-.pf-photo-change-btn {
+.pf-avatar-overlay {
   position: absolute;
-  bottom: 2px;
-  right: 2px;
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+  gap: 4px;
+}
+.pf-avatar-overlay-icon  { font-size: 1.3rem; }
+.pf-avatar-overlay-text  { font-size: 0.68rem; color: #fff; font-weight: 600; }
+
+.pf-upload-progress-wrap {
+  width: 100%;
+  background: #f5f4f0;
+  border-radius: 6px;
+  height: 6px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+.pf-upload-progress-bar {
+  height: 100%;
+  background: #e91e8c;
+  border-radius: 6px;
+  transition: width 0.2s ease;
+}
+.pf-upload-progress-label {
+  font-size: 11px;
+  color: #999;
+  margin-top: 4px;
+  display: block;
+}
+
+.pf-photo-filename {
+  font-size: 11px;
+  color: #aaa;
+  word-break: break-all;
+  max-width: 100%;
+}
+
+.pf-big-name  { font-size: 15px; font-weight: 600; color: #1a1a1a; }
+.pf-big-role  { font-size: 11px; color: #e91e8c; font-weight: 600; }
+.pf-big-email { font-size: 12px; color: #999; }
+
+.pf-edit-btn {
+  margin-top: 8px;
+  padding: 8px 20px;
   background: #e91e8c;
   color: #fff;
   border: none;
+  border-radius: 8px;
   font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   transition: background 0.15s;
-  line-height: 1;
+  width: 100%;
 }
+.pf-edit-btn:hover { background: #c2177a; }
 
-.pf-photo-change-btn:hover { background: #c9186f; }
-
-.pf-big-name {
-  font-size: 16px;
-  font-weight: 600;
-  color: #1a1a1a;
-  line-height: 1.3;
-}
-
-.pf-big-role {
-  font-size: 11px;
-  color: #aaa;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-}
-
-.pf-big-email {
-  font-size: 12px;
-  color: #999;
-  word-break: break-all;
-}
-
-.pf-edit-btn {
-  margin-top: 6px;
-  padding: 8px 20px;
-  border-radius: 20px;
-  border: 1.5px solid #e91e8c;
-  background: none;
-  color: #e91e8c;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s;
-}
-
-.pf-edit-btn:hover {
-  background: #e91e8c;
-  color: #fff;
-}
-
-/* ─── INFO CARD ─── */
+/* Quick info card */
 .pf-info-card { padding: 18px 20px; }
-
 .pf-info-label {
   font-size: 11px;
   color: #aaa;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.4px;
-  margin-bottom: 3px;
 }
-
 .pf-info-val {
-  font-size: 13.5px;
-  font-weight: 500;
+  font-size: 13px;
   color: #1a1a1a;
-  line-height: 1.4;
+  margin-top: 4px;
+  word-break: break-word;
 }
 
-/* ═══════════════════════════════════════════
-   FORM
-═══════════════════════════════════════════ */
+/* ════════════════════════════════
+   RIGHT COLUMN
+════════════════════════════════ */
+.pf-right-col { display: flex; flex-direction: column; gap: 19px; }
+
+.pf-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+.pf-card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
 .pf-editing-badge {
   font-size: 11px;
-  padding: 3px 9px;
-  border-radius: 20px;
   background: #fce4f0;
   color: #e91e8c;
+  border: 1px solid #f9b8d8;
+  padding: 2px 10px;
+  border-radius: 20px;
   font-weight: 600;
 }
 
+/* Status messages */
+.pf-msg {
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+.pf-msg--ok  { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+.pf-msg--err { background: #fff1f2; color: #be123c; border: 1px solid #fecdd3; }
+
+/* Form grid */
 .pf-form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 14px 18px;
+  gap: 19px;
 }
-
-.pf-field { display: flex; flex-direction: column; gap: 5px; }
-
 .pf-field--full { grid-column: 1 / -1; }
 
 .pf-field-label {
+  display: block;
   font-size: 11px;
+  font-weight: 600;
   color: #aaa;
   text-transform: uppercase;
   letter-spacing: 0.4px;
-  font-weight: 600;
+  margin-bottom: 6px;
 }
-
-.pf-field-val {
-  font-size: 14px;
-  color: #1a1a1a;
-  padding: 8px 0;
-  border-bottom: 1px solid #ece9e4;
-}
-
-.pf-field-val--muted { color: #999; }
+.pf-field-val        { font-size: 13.5px; color: #1a1a1a; padding: 4px 0; }
+.pf-field-val--muted { color: #aaa; }
 
 .pf-input {
-  padding: 8px 12px;
+  width: 100%;
+  padding: 8px 11px;
   border: 1px solid #e0ddd8;
   border-radius: 8px;
-  font-size: 13.5px;
+  font-size: 13px;
   color: #1a1a1a;
-  background: #fff;
+  background: #fafaf8;
   outline: none;
-  transition: border-color 0.15s;
-  width: 100%;
-  font-family: 'Segoe UI', sans-serif;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.pf-input:focus {
+  border-color: #e91e8c;
+  box-shadow: 0 0 0 3px rgba(233,30,140,0.08);
 }
 
-.pf-input:focus { border-color: #e91e8c; }
-
-.pf-input::placeholder { color: #bbb; }
-
+/* Action buttons */
 .pf-action-row {
   display: flex;
   gap: 10px;
-  margin-top: 20px;
-  flex-wrap: wrap;
+  margin-top: 18px;
 }
-
 .pf-save-btn {
   padding: 9px 22px;
-  border-radius: 8px;
-  border: none;
   background: #e91e8c;
   color: #fff;
+  border: none;
+  border-radius: 8px;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   transition: background 0.15s;
 }
-
-.pf-save-btn:hover:not(:disabled) { background: #c9186f; }
-
-.pf-save-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.pf-save-btn:hover:not(:disabled) { background: #c2177a; }
+.pf-save-btn:disabled { opacity: 0.55; cursor: not-allowed; }
 
 .pf-cancel-btn {
-  padding: 9px 18px;
-  border-radius: 8px;
-  border: 1px solid #e0ddd8;
-  background: none;
-  font-size: 13px;
-  color: #888;
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s;
-}
-
-.pf-cancel-btn:hover { background: #f5f4f0; color: #444; }
-
-/* ─── MESSAGES ─── */
-.pf-msg {
-  font-size: 13px;
-  padding: 10px 14px;
-  border-radius: 8px;
-  margin-bottom: 14px;
-  font-weight: 500;
-}
-
-.pf-msg--ok {
-  background: #e8f5e9;
-  color: #2e7d32;
-  border: 1px solid #c8e6c9;
-}
-
-.pf-msg--err {
-  background: #fce4f0;
-  color: #b3126e;
-  border: 1px solid #f8bdd8;
-}
-
-/* ─── SECURITY / PASSWORD ─── */
-.pf-pw-hint { font-size: 13px; color: #aaa; }
-
-.pf-toggle-pw-btn {
-  padding: 7px 14px;
-  border-radius: 8px;
-  border: 1px solid #e0ddd8;
-  background: none;
-  font-size: 12.5px;
+  padding: 9px 22px;
+  background: #fff;
   color: #666;
+  border: 1px solid #e0ddd8;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  transition: background 0.15s, border-color 0.15s;
 }
+.pf-cancel-btn:hover:not(:disabled) {
+  background: #f5f4f0;
+  border-color: #ccc;
+}
+.pf-cancel-btn:disabled { opacity: 0.55; cursor: not-allowed; }
 
+/* Security section */
+.pf-toggle-pw-btn {
+  padding: 6px 14px;
+  background: transparent;
+  border: 1px solid #e0ddd8;
+  border-radius: 8px;
+  color: #666;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
 .pf-toggle-pw-btn:hover {
-  background: #fce4f0;
-  color: #e91e8c;
-  border-color: #e91e8c;
+  background: #f5f4f0;
+  border-color: #ccc;
 }
 
-.pf-pw-form {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
+.pf-pw-hint { font-size: 13px; color: #aaa; }
+.pf-pw-form { display: flex; flex-direction: column; gap: 14px; }
 
-/* ─── RESPONSIVE ─── */
+/* ════════════════════════════════
+   RESPONSIVE
+════════════════════════════════ */
 @media (max-width: 1100px) {
-  .pf-content-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .pf-left-col {
-    flex-direction: row;
-    flex-wrap: wrap;
-  }
-
+  .pf-content-grid { grid-template-columns: 1fr; }
+  .pf-left-col { flex-direction: row; flex-wrap: wrap; }
   .pf-avatar-card { flex: 1; min-width: 200px; }
   .pf-info-card   { flex: 1; min-width: 200px; }
 }
 
 @media (max-width: 768px) {
   .pf-sidebar { display: none; }
-
   .pf-main { padding: 20px 16px; }
-
   .pf-form-grid { grid-template-columns: 1fr; }
-
   .pf-left-col { flex-direction: column; }
 }

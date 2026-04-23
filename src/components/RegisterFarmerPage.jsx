@@ -24,26 +24,22 @@ export default function RegisterFarmerPage() {
 
   const [farmers, setFarmers] = useState([]);
   const [userName, setUserName] = useState({ first: "", last: "" });
+  const [photoURL, setPhotoURL] = useState("");
   const [loading, setLoading] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [pendingCount, setPendingCount] = useState(0); // ← NEW
 
-  // =========================
-  // Logout
-  // =========================
+  const navClass = ({ isActive }) => (isActive ? "active" : undefined);
+
   const handleLogout = async () => {
     await signOut(auth);
     navigate("/login");
   };
 
-  // =========================
-  // Initials helper
-  // =========================
   const getInitials = (first = "", last = "") =>
     `${first.charAt(0)}${last.charAt(0)}`.toUpperCase();
 
-  // =========================
-  // Fetch Admin Name
-  // =========================
+  // Fetch Admin Name + Photo
   useEffect(() => {
     const fetchAdminName = async () => {
       const user = auth.currentUser;
@@ -53,6 +49,7 @@ export default function RegisterFarmerPage() {
         if (userSnap.exists()) {
           const data = userSnap.data();
           setUserName({ first: data.firstName || "", last: data.lastName || "" });
+          setPhotoURL(data.photoURL || "");
         }
       } catch (err) {
         console.error(err);
@@ -61,9 +58,7 @@ export default function RegisterFarmerPage() {
     fetchAdminName();
   }, []);
 
-  // =========================
   // Realtime Unread Notifications
-  // =========================
   useEffect(() => {
     const user = auth.currentUser;
     if (!user) return;
@@ -78,13 +73,14 @@ export default function RegisterFarmerPage() {
     return () => unsubscribe();
   }, []);
 
-  // =========================
-  // Load Pending Join Requests
-  // =========================
+  // ─── Realtime Pending Farmer Requests (for badge + list) ───
   useEffect(() => {
-    const loadPendingFarmers = async () => {
-      const user = auth.currentUser;
-      if (!user) return;
+    const user = auth.currentUser;
+    if (!user) return;
+
+    let unsubscribers = [];
+
+    const setupListeners = async () => {
       setLoading(true);
       try {
         const groupQuery = query(
@@ -92,40 +88,62 @@ export default function RegisterFarmerPage() {
           where("createdBy", "==", user.uid)
         );
         const groupSnapshot = await getDocs(groupQuery);
-        let pendingFarmers = [];
+        const countMap = {};
+
+        // We'll track pending farmers across all groups reactively
+        const farmersMap = {};
 
         for (const groupDoc of groupSnapshot.docs) {
           const groupId = groupDoc.id;
           const groupData = groupDoc.data();
-          const joinRef = collection(db, "farmgroups", groupId, "joinRequests");
-          const joinSnapshot = await getDocs(joinRef);
+          countMap[groupId] = 0;
+          farmersMap[groupId] = [];
 
-          const farmerList = await Promise.all(
-            joinSnapshot.docs.map(async (requestDoc) => {
-              const farmerUid = requestDoc.id;
-              const farmerSnap = await getDoc(doc(db, "users", farmerUid));
-              return {
-                id: farmerUid,
-                groupId,
-                groupName: groupData.farmgroupName || "",
-                ...(farmerSnap.exists() ? farmerSnap.data() : {}),
-              };
-            })
-          );
-          pendingFarmers = [...pendingFarmers, ...farmerList];
+          const joinRef = collection(db, "farmgroups", groupId, "joinRequests");
+
+          const unsub = onSnapshot(joinRef, async (snap) => {
+            countMap[groupId] = snap.size;
+            const total = Object.values(countMap).reduce((a, b) => a + b, 0);
+            setPendingCount(total);
+
+            // Also update the farmer list for this group
+            const farmerList = await Promise.all(
+              snap.docs.map(async (requestDoc) => {
+                const farmerUid = requestDoc.id;
+                const farmerSnap = await getDoc(doc(db, "users", farmerUid));
+                return {
+                  id: farmerUid,
+                  groupId,
+                  groupName: groupData.farmgroupName || "",
+                  ...(farmerSnap.exists() ? farmerSnap.data() : {}),
+                };
+              })
+            );
+            farmersMap[groupId] = farmerList;
+
+            // Flatten all groups into one list
+            const allFarmers = Object.values(farmersMap).flat();
+            setFarmers(allFarmers);
+            setLoading(false);
+          });
+
+          unsubscribers.push(unsub);
         }
-        setFarmers(pendingFarmers);
+
+        if (groupSnapshot.empty) {
+          setLoading(false);
+        }
       } catch (error) {
         console.error("Error loading pending farmers:", error);
+        setLoading(false);
       }
-      setLoading(false);
     };
-    loadPendingFarmers();
+
+    setupListeners();
+    return () => unsubscribers.forEach((fn) => fn());
   }, []);
 
-  // =========================
   // Approve Farmer
-  // =========================
   const handleApprove = async (farmer) => {
     try {
       await setDoc(
@@ -135,29 +153,24 @@ export default function RegisterFarmerPage() {
       await deleteDoc(
         doc(db, "farmgroups", farmer.groupId, "joinRequests", farmer.id)
       );
-      setFarmers((prev) => prev.filter((f) => f.id !== farmer.id));
+      // List updates automatically via onSnapshot
     } catch (error) {
       console.error(error);
     }
   };
 
-  // =========================
   // Reject Farmer
-  // =========================
   const handleReject = async (farmer) => {
     try {
       await deleteDoc(
         doc(db, "farmgroups", farmer.groupId, "joinRequests", farmer.id)
       );
-      setFarmers((prev) => prev.filter((f) => f.id !== farmer.id));
+      // List updates automatically via onSnapshot
     } catch (error) {
       console.error(error);
     }
   };
 
-  // =========================
-  // UI Render
-  // =========================
   return (
     <div className="f-dashboard">
 
@@ -169,7 +182,10 @@ export default function RegisterFarmerPage() {
 
         <div className="f-profile">
           <div className="f-avatar">
-            {userName.first ? getInitials(userName.first, userName.last) : "AD"}
+            {photoURL
+              ? <img src={photoURL} alt="avatar" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} />
+              : (userName.first ? getInitials(userName.first, userName.last) : "AD")
+            }
           </div>
           <div>
             <p className="f-profile-name">
@@ -180,10 +196,19 @@ export default function RegisterFarmerPage() {
         </div>
 
         <nav className="f-menu">
-          <NavLink to="/dashboard">Dashboard</NavLink>
-          <NavLink to="/register-farmer" className="active">Register Farmer</NavLink>
-          <NavLink to="/farmers">Farmers</NavLink>
-          <NavLink to="/notifications">
+          <NavLink to="/dashboard" className={navClass}>Dashboard</NavLink>
+          <NavLink to="/register-farmer" className={navClass}>
+            <span className="f-notif-link">
+              Register Farmer
+              {pendingCount > 0 && (
+                <span className="f-notif-badge">
+                  {pendingCount > 99 ? "99+" : pendingCount}
+                </span>
+              )}
+            </span>
+          </NavLink>
+          <NavLink to="/farmers" className={navClass}>Farmers</NavLink>
+          <NavLink to="/notifications" className={navClass}>
             <span className="f-notif-link">
               Notification
               {unreadCount > 0 && (
@@ -193,7 +218,8 @@ export default function RegisterFarmerPage() {
               )}
             </span>
           </NavLink>
-          <NavLink to="/farm-group">Farm Group</NavLink>
+          <NavLink to="/farm-group" className={navClass}>Farm Group</NavLink>
+          <NavLink to="/profile" className={navClass}>Profile</NavLink>
         </nav>
 
         <button className="f-logout" onClick={handleLogout}>
@@ -207,7 +233,7 @@ export default function RegisterFarmerPage() {
         {/* TOP BAR */}
         <div className="f-header">
           <div>
-            <h1 className="f-page-title">Pending Farmer Requests</h1>
+            <h1 className="f-page-title">PENDING FARMER REQUESTS</h1>
             <p className="f-page-sub">Review and manage incoming join requests</p>
           </div>
         </div>

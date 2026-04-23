@@ -10,7 +10,8 @@ import {
   doc,
   getDoc,
   deleteDoc,
-  getDocs
+  getDocs,
+  where,
 } from "firebase/firestore";
 import { NavLink, useNavigate } from "react-router-dom";
 import { signOut, onAuthStateChanged } from "firebase/auth";
@@ -19,15 +20,19 @@ const NotificationPage = ({ fcmMessage }) => {
   const navigate = useNavigate();
   const [currentUser, setCurrentUser] = useState(null);
   const [userName, setUserName] = useState({ first: "", last: "" });
+  const [photoURL, setPhotoURL] = useState("");
   const [notifications, setNotifications] = useState([]);
 
   const [showConfirm, setShowConfirm] = useState(false);
   const [notifToDelete, setNotifToDelete] = useState(null);
   const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
 
+  const [pendingCount, setPendingCount] = useState(0); // ← NEW
+
   const unreadCount = notifications.filter((n) => !n.read).length;
 
-  // ─── Helpers ───
+  const navClass = ({ isActive }) => (isActive ? "active" : undefined);
+
   const getInitials = (first = "", last = "") =>
     `${first.charAt(0)}${last.charAt(0)}`.toUpperCase();
 
@@ -49,7 +54,7 @@ const NotificationPage = ({ fcmMessage }) => {
     return () => unsubscribe();
   }, [navigate]);
 
-  // ─── Fetch User Name ───
+  // ─── Fetch User Name + Photo ───
   useEffect(() => {
     if (!currentUser) return;
     const fetchUserName = async () => {
@@ -57,7 +62,11 @@ const NotificationPage = ({ fcmMessage }) => {
         const userSnap = await getDoc(doc(db, "users", currentUser.uid));
         if (userSnap.exists()) {
           const data = userSnap.data();
-          setUserName({ first: data.firstName || data.fname || "", last: data.lastName || data.lname || "" });
+          setUserName({
+            first: data.firstName || data.fname || "",
+            last:  data.lastName  || data.lname || "",
+          });
+          setPhotoURL(data.photoURL || "");
         }
       } catch (err) {
         console.error("Error fetching user data:", err);
@@ -85,6 +94,41 @@ const NotificationPage = ({ fcmMessage }) => {
       setNotifications(list);
     });
     return () => unsubscribe();
+  }, [currentUser]);
+
+  // ─── Realtime Pending Farmer Requests ───
+  useEffect(() => {
+    if (!currentUser) return;
+
+    let unsubscribers = [];
+
+    const setupListeners = async () => {
+      try {
+        const groupQuery = query(
+          collection(db, "farmgroups"),
+          where("createdBy", "==", currentUser.uid)
+        );
+        const groupSnapshot = await getDocs(groupQuery);
+        const countMap = {};
+
+        groupSnapshot.docs.forEach((groupDoc) => {
+          const groupId = groupDoc.id;
+          countMap[groupId] = 0;
+          const joinRef = collection(db, "farmgroups", groupId, "joinRequests");
+          const unsub = onSnapshot(joinRef, (snap) => {
+            countMap[groupId] = snap.size;
+            const total = Object.values(countMap).reduce((a, b) => a + b, 0);
+            setPendingCount(total);
+          });
+          unsubscribers.push(unsub);
+        });
+      } catch (err) {
+        console.error("Error setting up pending count listeners:", err);
+      }
+    };
+
+    setupListeners();
+    return () => unsubscribers.forEach((fn) => fn());
   }, [currentUser]);
 
   // ─── FCM Message ───
@@ -136,10 +180,10 @@ const NotificationPage = ({ fcmMessage }) => {
 
   const getColor = (type) => {
     switch (type) {
-      case "alert": return "#fb8c00";
-      case "update": return "#43a047";
+      case "alert":         return "#fb8c00";
+      case "update":        return "#43a047";
       case "weatherUpdate": return "#00acc1";
-      default: return "#aaa";
+      default:              return "#aaa";
     }
   };
 
@@ -156,7 +200,10 @@ const NotificationPage = ({ fcmMessage }) => {
 
         <div className="rf-profile">
           <div className="rf-avatar">
-            {userName.first ? getInitials(userName.first, userName.last) : "AD"}
+            {photoURL
+              ? <img src={photoURL} alt="avatar" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} />
+              : (userName.first ? getInitials(userName.first, userName.last) : "AD")
+            }
           </div>
           <div>
             <p className="rf-profile-name">
@@ -167,10 +214,19 @@ const NotificationPage = ({ fcmMessage }) => {
         </div>
 
         <nav className="rf-menu">
-          <NavLink to="/dashboard">Dashboard</NavLink>
-          <NavLink to="/register-farmer">Register Farmer</NavLink>
-          <NavLink to="/farmers">Farmers</NavLink>
-          <NavLink to="/notifications" className="active">
+          <NavLink to="/dashboard" className={navClass}>Dashboard</NavLink>
+          <NavLink to="/register-farmer" className={navClass}>
+            <span className="notif-nav-link">
+              Register Farmer
+              {pendingCount > 0 && (
+                <span className="notif-badge">
+                  {pendingCount > 99 ? "99+" : pendingCount}
+                </span>
+              )}
+            </span>
+          </NavLink>
+          <NavLink to="/farmers" className={navClass}>Farmers</NavLink>
+          <NavLink to="/notifications" className={navClass}>
             <span className="notif-nav-link">
               Notification
               {unreadCount > 0 && (
@@ -180,7 +236,8 @@ const NotificationPage = ({ fcmMessage }) => {
               )}
             </span>
           </NavLink>
-          <NavLink to="/farm-group">Farm Group</NavLink>
+          <NavLink to="/farm-group" className={navClass}>Farm Group</NavLink>
+          <NavLink to="/profile" className={navClass}>Profile</NavLink>
         </nav>
 
         <button className="rf-logout" onClick={handleLogout}>
@@ -194,7 +251,7 @@ const NotificationPage = ({ fcmMessage }) => {
         {/* TOP BAR */}
         <div className="notif-topbar">
           <div>
-            <h1 className="notif-page-title">Notifications</h1>
+            <h1 className="notif-page-title">NOTIFICATIONS</h1>
             <p className="notif-page-sub">
               {unreadCount > 0
                 ? `You have ${unreadCount} unread notification${unreadCount > 1 ? "s" : ""}`

@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;1,400;1,700&family=DM+Sans:wght@300;400;500;600&display=swap');
+
 /* ═══════════════════════════════════════════
    DashboardPage.css — SmartAGRI Redesign
 ═══════════════════════════════════════════ */
@@ -39,14 +41,19 @@ html, body {
 
 .db-logo {
   font-size: 19px;
-  font-weight: 600;
-  color: #1a1a1a;
+  font-weight: 700;
+  color: #F4A300;
   padding: 24px 22px 22px;
   letter-spacing: -0.3px;
+  text-align: center;
+  font-family: 'DM Sans', sans-serif;
 }
 
 .db-logo-smart {
-  color: #e91e8c;
+  color: #F4A300;
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-weight: 400;
 }
 
 /* Profile */
@@ -147,7 +154,7 @@ html, body {
   font-size: 13px;
   color: #888;
   cursor: pointer;
-  text-align: left;
+  text-align: center;
   transition: background 0.15s, color 0.15s;
 }
 
@@ -161,7 +168,7 @@ html, body {
 ═══════════════════════════════════════════ */
 .db-main {
   flex: 1;
-  padding: 30px 32px;
+  padding: 18px 32px 30px;
   overflow-y: auto;
 }
 
@@ -169,7 +176,7 @@ html, body {
 .db-topbar {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   margin-bottom: 24px;
   gap: 20px;
   flex-wrap: wrap;
@@ -177,9 +184,10 @@ html, body {
 
 .db-page-title {
   font-size: 21px;
-  font-weight: 600;
+  font-weight: 800;
   color: #1a1a1a;
   margin-bottom: 3px;
+  letter-spacing: 0.5px;
 }
 
 .db-page-sub {
@@ -221,13 +229,7 @@ html, body {
 }
 
 .db-active-badge {
-  font-size: 11px;
-  padding: 3px 9px;
-  border-radius: 20px;
-  background: #fce4f0;
-  color: #e91e8c;
-  font-weight: 600;
-  align-self: flex-end;
+  display: none;
 }
 
 /* ─── STATS ROW ─── */
@@ -261,7 +263,7 @@ html, body {
 }
 
 /* ═══════════════════════════════════════════
-   CONTENT GRID
+   CONTENT GRID — 2 columns
 ═══════════════════════════════════════════ */
 .db-content-grid {
   display: grid;
@@ -271,6 +273,12 @@ html, body {
 }
 
 .db-left-col {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.db-right-col {
   display: flex;
   flex-direction: column;
   gap: 18px;
@@ -464,6 +472,13 @@ html, body {
   font-size: 32px;
 }
 
+.db-chart-empty-sub {
+  font-size: 11px;
+  color: #ccc;
+  text-align: center;
+  max-width: 260px;
+}
+
 /* ── PER-DEVICE MINI STATS ── */
 .db-device-stat-row {
   display: grid;
@@ -501,7 +516,7 @@ html, body {
 }
 
 /* ═══════════════════════════════════════════
-   SOIL MOISTURE
+   SOIL MOISTURE DEVICES
 ═══════════════════════════════════════════ */
 .db-soil-card {
   height: fit-content;
@@ -554,7 +569,6 @@ html, body {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
-/* ROW 1: Device ID + Active/Offline badge — side by side, space between */
 .db-device-header {
   display: flex;
   align-items: center;
@@ -593,13 +607,11 @@ html, body {
   border: 1px solid #e0e0e0;
 }
 
-/* ROW 2: Circular progressbar — centered */
 .db-progress-wrap {
   width: 90px;
   margin: 0 auto;
 }
 
-/* ROW 3: Soil status + Growth stage — stacked, centered */
 .db-device-footer {
   display: flex;
   flex-direction: column;
@@ -613,20 +625,10 @@ html, body {
   font-weight: 600;
 }
 
-/* Moisture color classes — replaces all inline color styles */
-.db-soil-status.moisture--wet {
-  color: #1976d2;
-}
+.db-soil-status.moisture--wet     { color: #1976d2; }
+.db-soil-status.moisture--dry     { color: #e91e8c; }
+.db-soil-status.moisture--optimal { color: #4caf50; }
 
-.db-soil-status.moisture--dry {
-  color: #e91e8c;
-}
-
-.db-soil-status.moisture--optimal {
-  color: #4caf50;
-}
-
-/* Growth stage badge — centered in footer */
 .db-growth-badge {
   font-size: 10px;
   padding: 2px 9px;
@@ -637,7 +639,107 @@ html, body {
   display: inline-block;
 }
 
-/* ─── RESPONSIVE ─── */
+.db-device-trend-row {
+  display: flex;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+/* ═══════════════════════════════════════════
+   MOISTURE TRENDS CARD
+═══════════════════════════════════════════ */
+.db-trends-card {
+  height: fit-content;
+}
+
+.db-trends-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.db-trend-card {
+  background: #fafaf9;
+  border: 1px solid #eae8e4;
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.db-trend-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.db-trend-device-id {
+  font-size: 12px;
+  font-weight: 700;
+  color: #1a1a1a;
+  letter-spacing: 0.02em;
+}
+
+.db-trend-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 9px;
+  border-radius: 20px;
+  border: 1px solid;
+  white-space: nowrap;
+}
+
+.db-trend-badge--sm {
+  font-size: 10px;
+  padding: 1px 7px;
+}
+
+.db-trend-moisture {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.db-trend-value {
+  font-size: 22px;
+  font-weight: 800;
+  color: #1a1a1a;
+  line-height: 1;
+}
+
+.db-trend-label {
+  font-size: 11px;
+  color: #888;
+}
+
+.db-trend-sparkline {
+  height: 60px;
+  position: relative;
+}
+
+.db-trend-no-data {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  font-size: 11px;
+  color: #bbb;
+  font-style: italic;
+}
+
+.db-trend-readings-count {
+  font-size: 10px;
+  color: #aaa;
+  margin: 0;
+}
+
+/* ═══════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════ */
 @media (max-width: 1100px) {
   .db-stats {
     grid-template-columns: repeat(2, 1fr);
@@ -654,7 +756,7 @@ html, body {
   }
 
   .db-main {
-    padding: 20px 16px;
+    padding: 14px 16px 24px;
   }
 
   .db-topbar {
@@ -682,5 +784,11 @@ html, body {
 
   .db-dt-divider {
     display: none;
+  }
+
+  .db-trends-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
   }
 }

@@ -3,14 +3,14 @@ import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getMessaging, getToken, onMessage } from "firebase/messaging";
-import { getStorage } from "firebase/storage";   // ← ADD THIS
+import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
   apiKey: "AIzaSyANI1nMfarUwm08XwccpVg8zqSsAqZjytA",
   authDomain: "smartagri-62ae1.firebaseapp.com",
   databaseURL: "https://smartagri-62ae1-default-rtdb.firebaseio.com",
   projectId: "smartagri-62ae1",
-  storageBucket: "smartagri-62ae1.appspot.com",
+  storageBucket: "smartagri-62ae1.firebasestorage.app",   // ← try this first; if still broken, change to smartagri-62ae1.firebasestorage.app
   messagingSenderId: "536057132104",
   appId: "1:536057132104:web:4fa6289aa595dec27b547d",
   measurementId: "G-FVCNR88T6C"
@@ -18,10 +18,9 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 
-export const auth = getAuth(app);
-export const db = getFirestore(app);
-export const storage = getStorage(app);          // ← ADD THIS
-
+export const auth      = getAuth(app);
+export const db        = getFirestore(app);
+export const storage   = getStorage(app);
 export const messaging = getMessaging(app);
 
 export const getFcmToken = async () => {
@@ -33,7 +32,7 @@ export const getFcmToken = async () => {
       console.log("FCM token:", currentToken);
       return currentToken;
     } else {
-      console.log("No FCM token available. Request permission to generate one.");
+      console.log("No FCM token available.");
       return null;
     }
   } catch (err) {
@@ -44,7 +43,7 @@ export const getFcmToken = async () => {
 
 export const onMessageListener = (callback) => {
   return onMessage(messaging, (payload) => {
-    console.log("FCM foreground message received: ", payload);
+    console.log("FCM foreground message received:", payload);
     if (callback) callback(payload);
   });
 };

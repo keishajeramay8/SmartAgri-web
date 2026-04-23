@@ -23,31 +23,29 @@ export default function FarmerPage() {
   const navigate = useNavigate();
 
   const [farmers, setFarmers] = useState([]);
-  const [farmGroupNames, setFarmGroupNames] = useState({}); // { groupId: groupName }
+  const [farmGroupNames, setFarmGroupNames] = useState({});
   const [userName, setUserName] = useState({ first: "", last: "" });
+  const [photoURL, setPhotoURL] = useState("");
   const [unreadCount, setUnreadCount] = useState(0);
+  const [pendingCount, setPendingCount] = useState(0); // ← NEW
 
-  // Edit Modal State
   const [showEditModal, setShowEditModal] = useState(false);
   const [editFarmer, setEditFarmer] = useState(null);
   const [editFirstName, setEditFirstName] = useState("");
   const [editLastName, setEditLastName] = useState("");
   const [editEmail, setEditEmail] = useState("");
 
-  // Remove Confirm Modal
   const [showRemoveModal, setShowRemoveModal] = useState(false);
   const [selectedFarmer, setSelectedFarmer] = useState(null);
 
-  // Search
   const [search, setSearch] = useState("");
 
-  // Logout
   const handleLogout = async () => {
     await signOut(auth);
     navigate("/login");
   };
 
-  // Fetch Admin Name
+  // Fetch Admin Name + Photo
   useEffect(() => {
     const fetchAdminName = async () => {
       const user = auth.currentUser;
@@ -56,6 +54,7 @@ export default function FarmerPage() {
       if (snap.exists()) {
         const data = snap.data();
         setUserName({ first: data.firstName || "", last: data.lastName || "" });
+        setPhotoURL(data.photoURL || "");
       }
     };
     fetchAdminName();
@@ -74,6 +73,42 @@ export default function FarmerPage() {
       setUnreadCount(unread);
     });
     return () => unsubscribe();
+  }, []);
+
+  // ─── Realtime Pending Farmer Requests ───
+  useEffect(() => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    let unsubscribers = [];
+
+    const setupListeners = async () => {
+      try {
+        const groupQuery = query(
+          collection(db, "farmgroups"),
+          where("createdBy", "==", user.uid)
+        );
+        const groupSnapshot = await getDocs(groupQuery);
+        const countMap = {};
+
+        groupSnapshot.docs.forEach((groupDoc) => {
+          const groupId = groupDoc.id;
+          countMap[groupId] = 0;
+          const joinRef = collection(db, "farmgroups", groupId, "joinRequests");
+          const unsub = onSnapshot(joinRef, (snap) => {
+            countMap[groupId] = snap.size;
+            const total = Object.values(countMap).reduce((a, b) => a + b, 0);
+            setPendingCount(total);
+          });
+          unsubscribers.push(unsub);
+        });
+      } catch (err) {
+        console.error("Error setting up pending count listeners:", err);
+      }
+    };
+
+    setupListeners();
+    return () => unsubscribers.forEach((fn) => fn());
   }, []);
 
   // Fetch Farmers
@@ -121,13 +156,11 @@ export default function FarmerPage() {
     loadFarmers();
   }, []);
 
-  // Open remove confirm modal
   const openRemoveModal = (farmer) => {
     setSelectedFarmer(farmer);
     setShowRemoveModal(true);
   };
 
-  // Confirm remove
   const handleRemove = async () => {
     if (!selectedFarmer) return;
     try {
@@ -142,7 +175,6 @@ export default function FarmerPage() {
     }
   };
 
-  // Open edit modal
   const handleEditClick = (farmer) => {
     setEditFarmer(farmer);
     setEditFirstName(farmer.firstName || "");
@@ -151,7 +183,6 @@ export default function FarmerPage() {
     setShowEditModal(true);
   };
 
-  // Save edit
   const handleUpdateFarmer = async () => {
     if (!editFarmer) return;
     try {
@@ -187,6 +218,8 @@ export default function FarmerPage() {
     );
   });
 
+  const navClass = ({ isActive }) => (isActive ? "active" : undefined);
+
   return (
     <div className="fp-dashboard">
       {/* SIDEBAR */}
@@ -197,7 +230,10 @@ export default function FarmerPage() {
 
         <div className="fp-profile">
           <div className="fp-avatar">
-            {userName.first ? getInitials(userName.first, userName.last) : "AD"}
+            {photoURL
+              ? <img src={photoURL} alt="avatar" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} />
+              : (userName.first ? getInitials(userName.first, userName.last) : "AD")
+            }
           </div>
           <div>
             <p className="fp-profile-name">
@@ -208,10 +244,19 @@ export default function FarmerPage() {
         </div>
 
         <nav className="fp-nav">
-          <NavLink to="/dashboard">Dashboard</NavLink>
-          <NavLink to="/register-farmer">Register Farmer</NavLink>
-          <NavLink to="/farmers" className="active">Farmers</NavLink>
-          <NavLink to="/notifications">
+          <NavLink to="/dashboard" className={navClass}>Dashboard</NavLink>
+          <NavLink to="/register-farmer" className={navClass}>
+            <span className="fp-notif-link">
+              Register Farmer
+              {pendingCount > 0 && (
+                <span className="fp-notif-badge">
+                  {pendingCount > 99 ? "99+" : pendingCount}
+                </span>
+              )}
+            </span>
+          </NavLink>
+          <NavLink to="/farmers" className={navClass}>Farmers</NavLink>
+          <NavLink to="/notifications" className={navClass}>
             <span className="fp-notif-link">
               Notification
               {unreadCount > 0 && (
@@ -221,7 +266,8 @@ export default function FarmerPage() {
               )}
             </span>
           </NavLink>
-          <NavLink to="/farm-group">Farm Group</NavLink>
+          <NavLink to="/farm-group" className={navClass}>Farm Group</NavLink>
+          <NavLink to="/profile" className={navClass}>Profile</NavLink>
         </nav>
 
         <button className="fp-logout" onClick={handleLogout}>
@@ -231,10 +277,9 @@ export default function FarmerPage() {
 
       {/* MAIN */}
       <main className="fp-main">
-        {/* TOP BAR */}
         <div className="fp-topbar">
           <div>
-            <h1 className="fp-page-title">Farmers</h1>
+            <h1 className="fp-page-title">FARMERS</h1>
             <p className="fp-page-sub">View and manage all registered farmers</p>
           </div>
           <input
@@ -246,7 +291,6 @@ export default function FarmerPage() {
           />
         </div>
 
-        {/* STATS */}
         <div className="fp-stats">
           <div className="fp-stat">
             <p className="fp-stat-label">Total Farmers</p>
@@ -262,16 +306,13 @@ export default function FarmerPage() {
           </div>
         </div>
 
-        {/* TABLE */}
         <div className="fp-table-wrap">
-          {/* HEADER */}
           <div className="fp-table-head">
             <span>Farmer</span>
             <span>Email</span>
             <span>Farm Group</span>
           </div>
 
-          {/* ROWS */}
           {filtered.length === 0 ? (
             <div className="fp-empty">
               <span className="fp-empty-icon">👨‍🌾</span>

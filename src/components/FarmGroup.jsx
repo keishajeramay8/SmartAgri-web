@@ -24,6 +24,7 @@ export default function FarmGroup() {
 
   const [farmGroups, setFarmGroups] = useState([]);
   const [userName, setUserName] = useState({ first: "", last: "" });
+  const [photoURL, setPhotoURL] = useState("");
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [farmName, setFarmName] = useState("");
@@ -47,9 +48,10 @@ export default function FarmGroup() {
   const [editGroup, setEditGroup] = useState(null);
 
   const [unreadCount, setUnreadCount] = useState(0);
-
-  // { [groupId]: { members: number, devices: number } }
+  const [pendingCount, setPendingCount] = useState(0); // ← NEW
   const [groupCounts, setGroupCounts] = useState({});
+
+  const navClass = ({ isActive }) => (isActive ? "active" : undefined);
 
   // REALTIME UNREAD NOTIFICATIONS COUNT
   useEffect(() => {
@@ -72,16 +74,16 @@ export default function FarmGroup() {
     navigate("/login");
   };
 
-  // FETCH CURRENT USER
+  // FETCH CURRENT USER + PHOTO
   useEffect(() => {
     const fetchUser = async () => {
       const user = auth.currentUser;
       if (!user) return;
-      const userRef = doc(db, "users", user.uid);
-      const userSnap = await getDoc(userRef);
+      const userSnap = await getDoc(doc(db, "users", user.uid));
       if (userSnap.exists()) {
         const data = userSnap.data();
         setUserName({ first: data.firstName || "", last: data.lastName || "" });
+        setPhotoURL(data.photoURL || "");
       }
     };
     fetchUser();
@@ -102,10 +104,45 @@ export default function FarmGroup() {
     return () => unsubscribe();
   }, []);
 
+  // ─── Realtime Pending Farmer Requests ───
+  useEffect(() => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    let unsubscribers = [];
+
+    const setupListeners = async () => {
+      try {
+        const groupQuery = query(
+          collection(db, "farmgroups"),
+          where("createdBy", "==", user.uid)
+        );
+        const groupSnapshot = await getDocs(groupQuery);
+        const countMap = {};
+
+        groupSnapshot.docs.forEach((groupDoc) => {
+          const groupId = groupDoc.id;
+          countMap[groupId] = 0;
+          const joinRef = collection(db, "farmgroups", groupId, "joinRequests");
+          const unsub = onSnapshot(joinRef, (snap) => {
+            countMap[groupId] = snap.size;
+            const total = Object.values(countMap).reduce((a, b) => a + b, 0);
+            setPendingCount(total);
+          });
+          unsubscribers.push(unsub);
+        });
+      } catch (err) {
+        console.error("Error setting up pending count listeners:", err);
+      }
+    };
+
+    setupListeners();
+    return () => unsubscribers.forEach((fn) => fn());
+  }, []);
+
   // FETCH MEMBER + DEVICE COUNTS PER GROUP
   useEffect(() => {
     if (farmGroups.length === 0) return;
-
     const fetchCounts = async () => {
       const counts = {};
       await Promise.all(
@@ -122,9 +159,9 @@ export default function FarmGroup() {
       );
       setGroupCounts(counts);
     };
-
     fetchCounts();
   }, [farmGroups]);
+
   const getInitials = (first = "", last = "") =>
     `${first.charAt(0)}${last.charAt(0)}`.toUpperCase();
 
@@ -160,14 +197,12 @@ export default function FarmGroup() {
     }
   };
 
-  // OPEN EDIT MODAL
   const handleEdit = (farm) => {
     setEditGroup(farm);
     setEditName(farm.farmgroupName);
     setShowEditModal(true);
   };
 
-  // SAVE EDIT
   const handleSaveEdit = async () => {
     if (!editName.trim()) return;
     try {
@@ -182,13 +217,11 @@ export default function FarmGroup() {
     }
   };
 
-  // OPEN DELETE GROUP MODAL
   const openDeleteGroupModal = (farm) => {
     setSelectedGroup(farm);
     setShowDeleteGroupModal(true);
   };
 
-  // DELETE FARM GROUP
   const handleDelete = async () => {
     if (!selectedGroup) return;
     try {
@@ -201,7 +234,6 @@ export default function FarmGroup() {
     }
   };
 
-  // VIEW MEMBERS
   const handleViewMembers = async (group) => {
     setGroupTitle(group.farmgroupName);
     setShowMembersModal(true);
@@ -216,7 +248,6 @@ export default function FarmGroup() {
     setMembers(list.filter(Boolean));
   };
 
-  // VIEW DEVICES
   const handleViewDevice = async (group) => {
     setGroupTitle(group.farmgroupName);
     const devicesRef = collection(db, "farmgroups", group.id, "devices");
@@ -234,7 +265,6 @@ export default function FarmGroup() {
     setShowDeviceModal(true);
   };
 
-  // DELETE DEVICE
   const handleDeleteDevice = async () => {
     if (!selectedDevice) return;
     await deleteDoc(
@@ -272,25 +302,33 @@ export default function FarmGroup() {
 
         <div className="fg-profile">
           <div className="fg-avatar">
-            {userName.first
-              ? getInitials(userName.first, userName.last)
-              : "AD"}
+            {photoURL
+              ? <img src={photoURL} alt="avatar" style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "50%" }} />
+              : (userName.first ? getInitials(userName.first, userName.last) : "AD")
+            }
           </div>
           <div>
             <p className="fg-profile-name">
-              {userName.first
-                ? `${userName.first} ${userName.last}`
-                : "Loading..."}
+              {userName.first ? `${userName.first} ${userName.last}` : "Loading..."}
             </p>
             <p className="fg-profile-role">Registered Admin</p>
           </div>
         </div>
 
         <nav className="fg-nav">
-          <NavLink to="/dashboard">Dashboard</NavLink>
-          <NavLink to="/register-farmer">Register Farmer</NavLink>
-          <NavLink to="/farmers">Farmers</NavLink>
-          <NavLink to="/notifications">
+          <NavLink to="/dashboard" className={navClass}>Dashboard</NavLink>
+          <NavLink to="/register-farmer" className={navClass}>
+            <span className="fg-notif-link">
+              Register Farmer
+              {pendingCount > 0 && (
+                <span className="fg-notif-badge">
+                  {pendingCount > 99 ? "99+" : pendingCount}
+                </span>
+              )}
+            </span>
+          </NavLink>
+          <NavLink to="/farmers" className={navClass}>Farmers</NavLink>
+          <NavLink to="/notifications" className={navClass}>
             <span className="fg-notif-link">
               Notification
               {unreadCount > 0 && (
@@ -300,9 +338,8 @@ export default function FarmGroup() {
               )}
             </span>
           </NavLink>
-          <NavLink to="/farm-group" className="active">
-            Farm Group
-          </NavLink>
+          <NavLink to="/farm-group" className={navClass}>Farm Group</NavLink>
+          <NavLink to="/profile" className={navClass}>Profile</NavLink>
         </nav>
 
         <button className="fg-logout" onClick={handleLogout}>
@@ -312,23 +349,18 @@ export default function FarmGroup() {
 
       {/* MAIN */}
       <main className="fg-main">
-        {/* HEADER */}
         <div className="fg-topbar">
           <div>
-            <h1 className="fg-page-title">Farm Groups</h1>
+            <h1 className="fg-page-title">FARM GROUPS</h1>
             <p className="fg-page-sub">
               Manage your registered farm groups and their members
             </p>
           </div>
-          <button
-            className="fg-create-btn"
-            onClick={() => setShowCreateModal(true)}
-          >
+          <button className="fg-create-btn" onClick={() => setShowCreateModal(true)}>
             + Create Group
           </button>
         </div>
 
-        {/* STATS */}
         <div className="fg-stats">
           <div className="fg-stat">
             <p className="fg-stat-label">Total Groups</p>
@@ -348,7 +380,6 @@ export default function FarmGroup() {
           </div>
         </div>
 
-        {/* CARDS */}
         <section className="fg-grid">
           {farmGroups.length === 0 && (
             <div className="fg-empty">
@@ -381,28 +412,16 @@ export default function FarmGroup() {
               </div>
 
               <div className="fg-card-actions">
-                <button
-                  className="fg-btn fg-btn-members"
-                  onClick={() => handleViewMembers(f)}
-                >
+                <button className="fg-btn fg-btn-members" onClick={() => handleViewMembers(f)}>
                   <FaUsers size={12} /> Members
                 </button>
-                <button
-                  className="fg-btn fg-btn-devices"
-                  onClick={() => handleViewDevice(f)}
-                >
+                <button className="fg-btn fg-btn-devices" onClick={() => handleViewDevice(f)}>
                   <FaMicrochip size={12} /> Devices
                 </button>
-                <button
-                  className="fg-btn fg-btn-edit"
-                  onClick={() => handleEdit(f)}
-                >
+                <button className="fg-btn fg-btn-edit" onClick={() => handleEdit(f)}>
                   <FaEdit size={12} /> Edit
                 </button>
-                <button
-                  className="fg-btn fg-btn-delete"
-                  onClick={() => openDeleteGroupModal(f)}
-                >
+                <button className="fg-btn fg-btn-delete" onClick={() => openDeleteGroupModal(f)}>
                   <FaTrash size={12} /> Delete
                 </button>
               </div>
@@ -417,12 +436,7 @@ export default function FarmGroup() {
           <div className="fg-modal">
             <div className="fg-modal-header">
               <h3>Create Farm Group</h3>
-              <button
-                className="fg-modal-x"
-                onClick={() => setShowCreateModal(false)}
-              >
-                ✕
-              </button>
+              <button className="fg-modal-x" onClick={() => setShowCreateModal(false)}>✕</button>
             </div>
             <label className="fg-label">Farm Group Name</label>
             <input
@@ -441,15 +455,8 @@ export default function FarmGroup() {
               onChange={(e) => setFarmCode(e.target.value)}
             />
             <div className="fg-modal-footer">
-              <button
-                className="fg-modal-cancel"
-                onClick={() => setShowCreateModal(false)}
-              >
-                Cancel
-              </button>
-              <button className="fg-modal-confirm" onClick={handleAddFarmGroup}>
-                Create
-              </button>
+              <button className="fg-modal-cancel" onClick={() => setShowCreateModal(false)}>Cancel</button>
+              <button className="fg-modal-confirm" onClick={handleAddFarmGroup}>Create</button>
             </div>
           </div>
         </div>
@@ -461,12 +468,7 @@ export default function FarmGroup() {
           <div className="fg-modal">
             <div className="fg-modal-header">
               <h3>Edit Farm Group</h3>
-              <button
-                className="fg-modal-x"
-                onClick={() => setShowEditModal(false)}
-              >
-                ✕
-              </button>
+              <button className="fg-modal-x" onClick={() => setShowEditModal(false)}>✕</button>
             </div>
             <label className="fg-label">Farm Group Name</label>
             <input
@@ -476,15 +478,8 @@ export default function FarmGroup() {
               onChange={(e) => setEditName(e.target.value)}
             />
             <div className="fg-modal-footer">
-              <button
-                className="fg-modal-cancel"
-                onClick={() => setShowEditModal(false)}
-              >
-                Cancel
-              </button>
-              <button className="fg-modal-confirm" onClick={handleSaveEdit}>
-                Save
-              </button>
+              <button className="fg-modal-cancel" onClick={() => setShowEditModal(false)}>Cancel</button>
+              <button className="fg-modal-confirm" onClick={handleSaveEdit}>Save</button>
             </div>
           </div>
         </div>
@@ -496,28 +491,15 @@ export default function FarmGroup() {
           <div className="fg-modal fg-modal-sm">
             <div className="fg-modal-header">
               <h3>Delete Farm Group</h3>
-              <button
-                className="fg-modal-x"
-                onClick={() => setShowDeleteGroupModal(false)}
-              >
-                ✕
-              </button>
+              <button className="fg-modal-x" onClick={() => setShowDeleteGroupModal(false)}>✕</button>
             </div>
             <p className="fg-modal-body-text">
               Are you sure you want to delete{" "}
-              <strong>{selectedGroup.farmgroupName}</strong>? This action cannot
-              be undone.
+              <strong>{selectedGroup.farmgroupName}</strong>? This action cannot be undone.
             </p>
             <div className="fg-modal-footer">
-              <button
-                className="fg-modal-cancel"
-                onClick={() => setShowDeleteGroupModal(false)}
-              >
-                Cancel
-              </button>
-              <button className="fg-modal-danger" onClick={handleDelete}>
-                Delete
-              </button>
+              <button className="fg-modal-cancel" onClick={() => setShowDeleteGroupModal(false)}>Cancel</button>
+              <button className="fg-modal-danger" onClick={handleDelete}>Delete</button>
             </div>
           </div>
         </div>
@@ -529,12 +511,7 @@ export default function FarmGroup() {
           <div className="fg-modal">
             <div className="fg-modal-header">
               <h3>{groupTitle} — Members</h3>
-              <button
-                className="fg-modal-x"
-                onClick={() => setShowMembersModal(false)}
-              >
-                ✕
-              </button>
+              <button className="fg-modal-x" onClick={() => setShowMembersModal(false)}>✕</button>
             </div>
             <div className="fg-list">
               {members.length === 0 && (
@@ -552,12 +529,7 @@ export default function FarmGroup() {
               ))}
             </div>
             <div className="fg-modal-footer">
-              <button
-                className="fg-modal-cancel"
-                onClick={() => setShowMembersModal(false)}
-              >
-                Close
-              </button>
+              <button className="fg-modal-cancel" onClick={() => setShowMembersModal(false)}>Close</button>
             </div>
           </div>
         </div>
@@ -569,12 +541,7 @@ export default function FarmGroup() {
           <div className="fg-modal">
             <div className="fg-modal-header">
               <h3>{groupTitle} — Devices</h3>
-              <button
-                className="fg-modal-x"
-                onClick={() => setShowDeviceModal(false)}
-              >
-                ✕
-              </button>
+              <button className="fg-modal-x" onClick={() => setShowDeviceModal(false)}>✕</button>
             </div>
             <div className="fg-list">
               {devices.length === 0 && (
@@ -586,22 +553,14 @@ export default function FarmGroup() {
                     <p className="fg-device-name">{d.deviceName}</p>
                     <p className="fg-device-id">ID: {d.deviceId}</p>
                   </div>
-                  <button
-                    className="fg-btn fg-btn-delete"
-                    onClick={() => openDeleteDeviceModal(d)}
-                  >
+                  <button className="fg-btn fg-btn-delete" onClick={() => openDeleteDeviceModal(d)}>
                     <FaTrash size={11} />
                   </button>
                 </div>
               ))}
             </div>
             <div className="fg-modal-footer">
-              <button
-                className="fg-modal-cancel"
-                onClick={() => setShowDeviceModal(false)}
-              >
-                Close
-              </button>
+              <button className="fg-modal-cancel" onClick={() => setShowDeviceModal(false)}>Close</button>
             </div>
           </div>
         </div>
@@ -613,27 +572,15 @@ export default function FarmGroup() {
           <div className="fg-modal fg-modal-sm">
             <div className="fg-modal-header">
               <h3>Delete Device</h3>
-              <button
-                className="fg-modal-x"
-                onClick={() => setDeleteDeviceModal(false)}
-              >
-                ✕
-              </button>
+              <button className="fg-modal-x" onClick={() => setDeleteDeviceModal(false)}>✕</button>
             </div>
             <p className="fg-modal-body-text">
               Are you sure you want to delete{" "}
               <strong>{selectedDevice.deviceName}</strong>?
             </p>
             <div className="fg-modal-footer">
-              <button
-                className="fg-modal-cancel"
-                onClick={() => setDeleteDeviceModal(false)}
-              >
-                Cancel
-              </button>
-              <button className="fg-modal-danger" onClick={handleDeleteDevice}>
-                Delete
-              </button>
+              <button className="fg-modal-cancel" onClick={() => setDeleteDeviceModal(false)}>Cancel</button>
+              <button className="fg-modal-danger" onClick={handleDeleteDevice}>Delete</button>
             </div>
           </div>
         </div>
