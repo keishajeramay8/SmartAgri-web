@@ -27,8 +27,10 @@ const NotificationPage = ({ fcmMessage }) => {
   const [notifToDelete, setNotifToDelete] = useState(null);
   const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
 
-  const [pendingCount, setPendingCount] = useState(0); // ← NEW
+  const [pendingCount, setPendingCount] = useState(0);
 
+  // We still track unread locally for the badge in the sidebar,
+  // but when on this page we mark all as read immediately.
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   const navClass = ({ isActive }) => (isActive ? "active" : undefined);
@@ -96,6 +98,29 @@ const NotificationPage = ({ fcmMessage }) => {
     return () => unsubscribe();
   }, [currentUser]);
 
+  // ─── Auto mark all as read when this page is opened ───
+  // This clears the notification badge on other pages immediately.
+  useEffect(() => {
+    if (!currentUser) return;
+    const markAllOnOpen = async () => {
+      try {
+        const snapshot = await getDocs(
+          collection(db, "users", currentUser.uid, "notifications")
+        );
+        const unread = snapshot.docs.filter((d) => !d.data().read);
+        if (unread.length === 0) return;
+        await Promise.all(
+          unread.map((d) =>
+            updateDoc(doc(db, "users", currentUser.uid, "notifications", d.id), { read: true })
+          )
+        );
+      } catch (err) {
+        console.error("Error marking notifications as read:", err);
+      }
+    };
+    markAllOnOpen();
+  }, [currentUser]);
+
   // ─── Realtime Pending Farmer Requests ───
   useEffect(() => {
     if (!currentUser) return;
@@ -116,7 +141,8 @@ const NotificationPage = ({ fcmMessage }) => {
           countMap[groupId] = 0;
           const joinRef = collection(db, "farmgroups", groupId, "joinRequests");
           const unsub = onSnapshot(joinRef, (snap) => {
-            countMap[groupId] = snap.size;
+            // Only count unseen requests
+            countMap[groupId] = snap.docs.filter((d) => !d.data().seenByAdmin).length;
             const total = Object.values(countMap).reduce((a, b) => a + b, 0);
             setPendingCount(total);
           });
@@ -248,7 +274,6 @@ const NotificationPage = ({ fcmMessage }) => {
       {/* ── MAIN ── */}
       <main className="rf-main">
 
-        {/* TOP BAR */}
         <div className="notif-topbar">
           <div>
             <h1 className="notif-page-title">NOTIFICATIONS</h1>
@@ -273,7 +298,6 @@ const NotificationPage = ({ fcmMessage }) => {
           </div>
         </div>
 
-        {/* NOTIFICATION LIST */}
         <div className="timeline-container">
           {notifications.length === 0 ? (
             <p className="no-notifications">

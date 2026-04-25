@@ -15,6 +15,7 @@ import {
   getDoc,
   orderBy,
   onSnapshot,
+  updateDoc,
 } from "firebase/firestore";
 
 import "./RegisterFarmerPage.css";
@@ -27,7 +28,7 @@ export default function RegisterFarmerPage() {
   const [photoURL, setPhotoURL] = useState("");
   const [loading, setLoading] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [pendingCount, setPendingCount] = useState(0); // ← NEW
+  const [pendingCount, setPendingCount] = useState(0);
 
   const navClass = ({ isActive }) => (isActive ? "active" : undefined);
 
@@ -73,7 +74,39 @@ export default function RegisterFarmerPage() {
     return () => unsubscribe();
   }, []);
 
-  // ─── Realtime Pending Farmer Requests (for badge + list) ───
+  // ─── Mark all current join requests as seen (clears the badge) ───
+  // Called once on mount so the admin badge goes to 0 while on this page.
+  useEffect(() => {
+    const markAllSeen = async () => {
+      const user = auth.currentUser;
+      if (!user) return;
+      try {
+        const groupQuery = query(
+          collection(db, "farmgroups"),
+          where("createdBy", "==", user.uid)
+        );
+        const groupSnapshot = await getDocs(groupQuery);
+        await Promise.all(
+          groupSnapshot.docs.map(async (groupDoc) => {
+            const joinRef = collection(db, "farmgroups", groupDoc.id, "joinRequests");
+            const joinSnap = await getDocs(joinRef);
+            return Promise.all(
+              joinSnap.docs.map((jDoc) =>
+                updateDoc(doc(db, "farmgroups", groupDoc.id, "joinRequests", jDoc.id), {
+                  seenByAdmin: true,
+                })
+              )
+            );
+          })
+        );
+      } catch (err) {
+        console.error("Error marking join requests as seen:", err);
+      }
+    };
+    markAllSeen();
+  }, []);
+
+  // ─── Realtime Pending Farmer Requests — only UNSEEN count for badge ───
   useEffect(() => {
     const user = auth.currentUser;
     if (!user) return;
@@ -89,8 +122,6 @@ export default function RegisterFarmerPage() {
         );
         const groupSnapshot = await getDocs(groupQuery);
         const countMap = {};
-
-        // We'll track pending farmers across all groups reactively
         const farmersMap = {};
 
         for (const groupDoc of groupSnapshot.docs) {
@@ -102,11 +133,12 @@ export default function RegisterFarmerPage() {
           const joinRef = collection(db, "farmgroups", groupId, "joinRequests");
 
           const unsub = onSnapshot(joinRef, async (snap) => {
-            countMap[groupId] = snap.size;
+            // Badge: only count requests not yet seen
+            countMap[groupId] = snap.docs.filter((d) => !d.data().seenByAdmin).length;
             const total = Object.values(countMap).reduce((a, b) => a + b, 0);
             setPendingCount(total);
 
-            // Also update the farmer list for this group
+            // Table: show ALL pending requests (seen or not)
             const farmerList = await Promise.all(
               snap.docs.map(async (requestDoc) => {
                 const farmerUid = requestDoc.id;
@@ -120,8 +152,6 @@ export default function RegisterFarmerPage() {
               })
             );
             farmersMap[groupId] = farmerList;
-
-            // Flatten all groups into one list
             const allFarmers = Object.values(farmersMap).flat();
             setFarmers(allFarmers);
             setLoading(false);
@@ -130,9 +160,7 @@ export default function RegisterFarmerPage() {
           unsubscribers.push(unsub);
         }
 
-        if (groupSnapshot.empty) {
-          setLoading(false);
-        }
+        if (groupSnapshot.empty) setLoading(false);
       } catch (error) {
         console.error("Error loading pending farmers:", error);
         setLoading(false);
@@ -153,7 +181,6 @@ export default function RegisterFarmerPage() {
       await deleteDoc(
         doc(db, "farmgroups", farmer.groupId, "joinRequests", farmer.id)
       );
-      // List updates automatically via onSnapshot
     } catch (error) {
       console.error(error);
     }
@@ -165,7 +192,6 @@ export default function RegisterFarmerPage() {
       await deleteDoc(
         doc(db, "farmgroups", farmer.groupId, "joinRequests", farmer.id)
       );
-      // List updates automatically via onSnapshot
     } catch (error) {
       console.error(error);
     }
@@ -230,7 +256,6 @@ export default function RegisterFarmerPage() {
       {/* ── MAIN ── */}
       <main className="f-main">
 
-        {/* TOP BAR */}
         <div className="f-header">
           <div>
             <h1 className="f-page-title">PENDING FARMER REQUESTS</h1>
@@ -238,7 +263,6 @@ export default function RegisterFarmerPage() {
           </div>
         </div>
 
-        {/* STATS ROW */}
         <div className="f-stats">
           <div className="f-stat">
             <p className="f-stat-label">Pending Requests</p>
@@ -258,7 +282,6 @@ export default function RegisterFarmerPage() {
           </div>
         </div>
 
-        {/* TABLE CARD */}
         <div className="f-table-section">
           <div className="f-card-header">
             <h2 className="f-card-title">Join Requests</h2>
@@ -269,19 +292,16 @@ export default function RegisterFarmerPage() {
             )}
           </div>
 
-          {/* Table Header */}
           <div className="f-table-header">
             <span>First Name</span>
             <span>Last Name</span>
             <span>Email Address</span>
           </div>
 
-          {/* Loading */}
           {loading && (
             <div className="f-loading">Loading requests...</div>
           )}
 
-          {/* Rows */}
           {!loading && farmers.map((f) => (
             <div className="f-row" key={f.id}>
               <span>{f.firstName || "—"}</span>
@@ -298,7 +318,6 @@ export default function RegisterFarmerPage() {
             </div>
           ))}
 
-          {/* Empty State */}
           {!loading && farmers.length === 0 && (
             <div className="f-empty">
               <span>🌱</span>

@@ -17,6 +17,7 @@ import {
   onSnapshot,
   where,
   getDocs,
+  writeBatch,
 } from "firebase/firestore";
 import {
   ref,
@@ -50,7 +51,7 @@ export default function ProfilePage() {
   const [pwMsg, setPwMsg]                   = useState("");
 
   const [unreadCount, setUnreadCount]       = useState(0);
-  const [pendingCount, setPendingCount]     = useState(0); // ← NEW
+  const [pendingCount, setPendingCount]     = useState(0);
 
   const fileInputRef = useRef(null);
 
@@ -125,7 +126,7 @@ export default function ProfilePage() {
           countMap[groupId] = 0;
           const joinRef = collection(db, "farmgroups", groupId, "joinRequests");
           const unsub = onSnapshot(joinRef, (snap) => {
-            countMap[groupId] = snap.size;
+            countMap[groupId] = snap.docs.filter((d) => !d.data().seenByAdmin).length;
             const total = Object.values(countMap).reduce((a, b) => a + b, 0);
             setPendingCount(total);
           });
@@ -142,6 +143,58 @@ export default function ProfilePage() {
 
   const getInitials = (first = "", last = "") =>
     `${first.charAt(0)}${last.charAt(0)}`.toUpperCase();
+
+  // ── MARK NOTIFICATIONS AS READ ────────────────────────────────────────────
+  const handleNotificationsNav = async () => {
+    const user = auth.currentUser;
+    if (!user) return;
+    try {
+      const q = query(
+        collection(db, "users", user.uid, "notifications"),
+        where("read", "==", false)
+      );
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        const batch = writeBatch(db);
+        snap.docs.forEach((d) => batch.update(d.ref, { read: true }));
+        await batch.commit();
+      }
+      setUnreadCount(0);
+    } catch (err) {
+      console.error("Failed to mark notifications as read:", err);
+    }
+  };
+
+  // ── MARK JOIN REQUESTS AS SEEN ────────────────────────────────────────────
+  const handleRegisterFarmerNav = async () => {
+    const user = auth.currentUser;
+    if (!user) return;
+    try {
+      const groupQuery = query(
+        collection(db, "farmgroups"),
+        where("createdBy", "==", user.uid)
+      );
+      const groupSnapshot = await getDocs(groupQuery);
+      const batch = writeBatch(db);
+      let hasPending = false;
+
+      for (const groupDoc of groupSnapshot.docs) {
+        const joinRef = collection(db, "farmgroups", groupDoc.id, "joinRequests");
+        const joinSnap = await getDocs(
+          query(joinRef, where("seenByAdmin", "==", false))
+        );
+        joinSnap.docs.forEach((d) => {
+          batch.update(d.ref, { seenByAdmin: true });
+          hasPending = true;
+        });
+      }
+
+      if (hasPending) await batch.commit();
+      setPendingCount(0);
+    } catch (err) {
+      console.error("Failed to mark join requests as seen:", err);
+    }
+  };
 
   // ── Photo selection ─────────────────────────────────────────────
   const handlePhotoChange = (e) => {
@@ -321,7 +374,11 @@ export default function ProfilePage() {
 
         <nav className="pf-nav">
           <NavLink to="/dashboard"       className={navClass}>Dashboard</NavLink>
-          <NavLink to="/register-farmer" className={navClass}>
+          <NavLink
+            to="/register-farmer"
+            className={navClass}
+            onClick={handleRegisterFarmerNav}
+          >
             <span className="pf-notif-link">
               Register Farmer
               {pendingCount > 0 && (
@@ -332,7 +389,11 @@ export default function ProfilePage() {
             </span>
           </NavLink>
           <NavLink to="/farmers"         className={navClass}>Farmers</NavLink>
-          <NavLink to="/notifications"   className={navClass}>
+          <NavLink
+            to="/notifications"
+            className={navClass}
+            onClick={handleNotificationsNav}
+          >
             <span className="pf-notif-link">
               Notification
               {unreadCount > 0 && (
@@ -425,15 +486,10 @@ export default function ProfilePage() {
               )}
             </div>
 
+            {/* Address only — coordinates removed */}
             <div className="pf-card pf-info-card">
               <p className="pf-info-label">Address</p>
               <p className="pf-info-val">{address || "—"}</p>
-              <p className="pf-info-label" style={{ marginTop: 12 }}>Coordinates</p>
-              <p className="pf-info-val">
-                {location.lat && location.lon
-                  ? `${location.lat}, ${location.lon}`
-                  : "—"}
-              </p>
             </div>
           </div>
 
@@ -523,7 +579,7 @@ export default function ProfilePage() {
               )}
             </div>
 
-            {/* Change Password */}
+            {/* Change Password — hint line removed */}
             <div className="pf-card">
               <div className="pf-card-header">
                 <h2 className="pf-card-title">Security</h2>
@@ -535,12 +591,6 @@ export default function ProfilePage() {
                   {showPwSection ? "Cancel" : "Change Password"}
                 </button>
               </div>
-
-              {!showPwSection && (
-                <p className="pf-pw-hint">
-                  Your password was last changed via Firebase Authentication.
-                </p>
-              )}
 
               {showPwSection && (
                 <div className="pf-pw-form">

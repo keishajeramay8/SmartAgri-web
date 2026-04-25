@@ -13,6 +13,7 @@ import {
   orderBy,
   limit,
   onSnapshot,
+  writeBatch,
 } from "firebase/firestore";
 import axios from "axios";
 import { CircularProgressbar, buildStyles } from "react-circular-progressbar";
@@ -48,11 +49,37 @@ function toDate(val) {
   return null;
 }
 
+function isSameCalendarDay(date, referenceDate) {
+  return (
+    date.getFullYear() === referenceDate.getFullYear() &&
+    date.getMonth()    === referenceDate.getMonth() &&
+    date.getDate()     === referenceDate.getDate()
+  );
+}
+
+function isSameCalendarWeek(date, referenceDate) {
+  const getMonday = (d) => {
+    const copy = new Date(d);
+    const day = copy.getDay();
+    const diff = copy.getDate() - day + (day === 0 ? -6 : 1);
+    copy.setDate(diff);
+    copy.setHours(0, 0, 0, 0);
+    return copy;
+  };
+  return getMonday(date).getTime() === getMonday(referenceDate).getTime();
+}
+
+function isSameCalendarMonth(date, referenceDate) {
+  return (
+    date.getFullYear() === referenceDate.getFullYear() &&
+    date.getMonth()    === referenceDate.getMonth()
+  );
+}
+
 function bucketLabel(date, filterType) {
   if (!date) return "Unknown";
   if (filterType === "daily") {
     return date.toLocaleString(undefined, {
-      month: "short", day: "numeric",
       hour: "2-digit", minute: "2-digit",
     });
   }
@@ -85,6 +112,48 @@ const TREND_META = {
   stable:  { icon: "→", label: "Stable",  color: "#4caf50" },
 };
 
+// ── Weather icon helper ───────────────────────────────────────────────────────
+// Returns a JSX-friendly icon URL or a custom sun SVG for clear/sunny conditions
+function getWeatherIconUrl(iconCode) {
+  // OpenWeatherMap clear sky codes: "01d" (clear day), "01n" (clear night)
+  // We return null for these so the component can render a custom sun icon
+  if (!iconCode) return null;
+  return `https://openweathermap.org/img/wn/${iconCode}@4x.png`;
+}
+
+function isClearSky(iconCode) {
+  return iconCode === "01d" || iconCode === "01n";
+}
+
+// Custom animated SVG sun for clear/sunny weather
+function SunIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 100 100"
+      className="db-weather-sun-icon"
+      aria-label="Clear sky / Sunny"
+    >
+      {/* Rays */}
+      {[0, 45, 90, 135, 180, 225, 270, 315].map((angle, i) => (
+        <line
+          key={i}
+          x1="50" y1="50"
+          x2={50 + 38 * Math.cos((angle * Math.PI) / 180)}
+          y2={50 + 38 * Math.sin((angle * Math.PI) / 180)}
+          stroke="#FFB300"
+          strokeWidth="4"
+          strokeLinecap="round"
+          opacity="0.85"
+        />
+      ))}
+      {/* Core circle */}
+      <circle cx="50" cy="50" r="20" fill="#FFD600" />
+      <circle cx="50" cy="50" r="16" fill="#FFEB3B" />
+    </svg>
+  );
+}
+
 export default function DashboardPage() {
   const navigate = useNavigate();
 
@@ -108,7 +177,7 @@ export default function DashboardPage() {
   const [loadingDevices, setLoadingDevices] = useState(false);
   const [filterType, setFilterType]         = useState("daily");
   const [unreadCount, setUnreadCount]       = useState(0);
-  const [pendingCount, setPendingCount]     = useState(0); // ← NEW
+  const [pendingCount, setPendingCount]     = useState(0);
 
   const unsubscribersRef = useRef([]);
 
@@ -158,7 +227,7 @@ export default function DashboardPage() {
     return () => unsub();
   }, []);
 
-  // ── REALTIME PENDING FARMER REQUESTS ─────────────────────────────────────
+  // ── REALTIME PENDING FARMER REQUESTS (unseen only) ───────────────────────
   useEffect(() => {
     const user = auth.currentUser;
     if (!user) return;
@@ -172,16 +241,14 @@ export default function DashboardPage() {
           where("createdBy", "==", user.uid)
         );
         const groupSnapshot = await getDocs(groupQuery);
-
         const countMap = {};
 
         groupSnapshot.docs.forEach((groupDoc) => {
           const groupId = groupDoc.id;
           countMap[groupId] = 0;
-
           const joinRef = collection(db, "farmgroups", groupId, "joinRequests");
           const unsub = onSnapshot(joinRef, (snap) => {
-            countMap[groupId] = snap.size;
+            countMap[groupId] = snap.docs.filter((d) => !d.data().seenByAdmin).length;
             const total = Object.values(countMap).reduce((a, b) => a + b, 0);
             setPendingCount(total);
           });
@@ -366,25 +433,91 @@ export default function DashboardPage() {
     await updateDoc(doc(db, "users", user.uid), { selectedFarmGroupId: farmId });
   };
 
+  // ── MARK NOTIFICATIONS AS READ when navigating to /notifications ──────────
+  const handleNotificationsNav = async (e) => {
+    const user = auth.currentUser;
+    if (!user) return;
+    try {
+      const q = query(
+        collection(db, "users", user.uid, "notifications"),
+        where("read", "==", false)
+      );
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        const batch = writeBatch(db);
+        snap.docs.forEach((d) => batch.update(d.ref, { read: true }));
+        await batch.commit();
+      }
+      setUnreadCount(0);
+    } catch (err) {
+      console.error("Failed to mark notifications as read:", err);
+    }
+  };
+
+  // ── MARK JOIN REQUESTS AS SEEN when navigating to /register-farmer ────────
+  const handleRegisterFarmerNav = async (e) => {
+    const user = auth.currentUser;
+    if (!user) return;
+    try {
+      const groupQuery = query(
+        collection(db, "farmgroups"),
+        where("createdBy", "==", user.uid)
+      );
+      const groupSnapshot = await getDocs(groupQuery);
+      const batch = writeBatch(db);
+      let hasPending = false;
+
+      for (const groupDoc of groupSnapshot.docs) {
+        const joinRef = collection(db, "farmgroups", groupDoc.id, "joinRequests");
+        const joinSnap = await getDocs(
+          query(joinRef, where("seenByAdmin", "==", false))
+        );
+        joinSnap.docs.forEach((d) => {
+          batch.update(d.ref, { seenByAdmin: true });
+          hasPending = true;
+        });
+      }
+
+      if (hasPending) await batch.commit();
+      setPendingCount(0);
+    } catch (err) {
+      console.error("Failed to mark join requests as seen:", err);
+    }
+  };
+
   const getInitials = (first = "", last = "") =>
     `${first.charAt(0)}${last.charAt(0)}`.toUpperCase();
+
+  // ── FILTER SESSIONS BY TIME WINDOW ───────────────────────────────────────
+  const getFilteredSessions = (sessions, type) => {
+    const now = new Date();
+    return sessions.filter((s) => {
+      if (type === "daily")   return isSameCalendarDay(s.timestamp, now);
+      if (type === "weekly")  return isSameCalendarWeek(s.timestamp, now);
+      if (type === "monthly") return isSameCalendarMonth(s.timestamp, now);
+      return true;
+    });
+  };
 
   // ── BUILD BAR CHART DATA ──────────────────────────────────────────────────
   const getChartData = () => {
     if (!irrigationSessions.length) return { labels: [], datasets: [] };
 
-    const deviceIds = [...new Set(irrigationSessions.map((s) => s.deviceId))].sort();
+    const filteredSessions = getFilteredSessions(irrigationSessions, filterType);
+    if (!filteredSessions.length) return { labels: [], datasets: [] };
+
+    const deviceIds = [...new Set(filteredSessions.map((s) => s.deviceId))].sort();
 
     const bucketMap = {};
-    irrigationSessions.forEach((s) => {
+    filteredSessions.forEach((s) => {
       const label = bucketLabel(s.timestamp, filterType);
       if (!bucketMap[label]) bucketMap[label] = {};
       bucketMap[label][s.deviceId] = (bucketMap[label][s.deviceId] ?? 0) + s.amountL;
     });
 
     const labels = Object.keys(bucketMap).sort((a, b) => {
-      const tA = irrigationSessions.find((s) => bucketLabel(s.timestamp, filterType) === a)?.timestamp ?? 0;
-      const tB = irrigationSessions.find((s) => bucketLabel(s.timestamp, filterType) === b)?.timestamp ?? 0;
+      const tA = filteredSessions.find((s) => bucketLabel(s.timestamp, filterType) === a)?.timestamp ?? 0;
+      const tB = filteredSessions.find((s) => bucketLabel(s.timestamp, filterType) === b)?.timestamp ?? 0;
       return tA - tB;
     });
 
@@ -432,15 +565,16 @@ export default function DashboardPage() {
     };
   };
 
-  // ── AGGREGATES ────────────────────────────────────────────────────────────
-  const totalWaterML = irrigationSessions.reduce((s, i) => s + i.amountML, 0);
+  // ── AGGREGATES (respect active filter for totals) ─────────────────────────
+  const filteredSessionsForTotals = getFilteredSessions(irrigationSessions, filterType);
+  const totalWaterML = filteredSessionsForTotals.reduce((s, i) => s + i.amountML, 0);
 
   const perDeviceTotals = devices.map((d) => ({
     ...d,
-    totalML:      irrigationSessions
+    totalML:      filteredSessionsForTotals
                     .filter((s) => s.deviceId === d.deviceId)
                     .reduce((sum, s) => sum + s.amountML, 0),
-    sessionCount: irrigationSessions.filter((s) => s.deviceId === d.deviceId).length,
+    sessionCount: filteredSessionsForTotals.filter((s) => s.deviceId === d.deviceId).length,
   }));
 
   const getMoistureClass = (status = "") => {
@@ -476,6 +610,12 @@ export default function DashboardPage() {
     return { ...d, trend, sparkline, moisture, history };
   });
 
+  const filterLabel = filterType === "daily" ? "today" : filterType === "weekly" ? "this week" : "this month";
+
+  // Weather icon code
+  const weatherIconCode = weather?.weather?.[0]?.icon ?? null;
+  const clearSky = isClearSky(weatherIconCode);
+
   return (
     <div className="db-dashboard">
 
@@ -500,7 +640,11 @@ export default function DashboardPage() {
         </div>
         <nav className="db-nav">
           <NavLink to="/dashboard" className={navClass} end>Dashboard</NavLink>
-          <NavLink to="/register-farmer" className={navClass}>
+          <NavLink
+            to="/register-farmer"
+            className={navClass}
+            onClick={handleRegisterFarmerNav}
+          >
             <span className="db-notif-link">
               Register Farmer
               {pendingCount > 0 && (
@@ -511,7 +655,11 @@ export default function DashboardPage() {
             </span>
           </NavLink>
           <NavLink to="/farmers" className={navClass}>Farmers</NavLink>
-          <NavLink to="/notifications" className={navClass}>
+          <NavLink
+            to="/notifications"
+            className={navClass}
+            onClick={handleNotificationsNav}
+          >
             <span className="db-notif-link">
               Notification
               {unreadCount > 0 && (
@@ -573,7 +721,7 @@ export default function DashboardPage() {
           </div>
           <div className="db-stat">
             <p className="db-stat-label">Irrigation Sessions</p>
-            <p className="db-stat-val">{irrigationSessions.length}</p>
+            <p className="db-stat-val">{filteredSessionsForTotals.length}</p>
           </div>
         </div>
 
@@ -603,11 +751,15 @@ export default function DashboardPage() {
                     <p className="db-weather-date">{currentDate}</p>
                     <p className="db-weather-time">{currentTime}</p>
                   </div>
-                  <img
-                    src={`https://openweathermap.org/img/wn/${weather.weather[0].icon}@4x.png`}
-                    alt="weather icon"
-                    className="db-weather-icon"
-                  />
+                  {clearSky ? (
+                    <SunIcon />
+                  ) : (
+                    <img
+                      src={getWeatherIconUrl(weatherIconCode)}
+                      alt={weather.weather[0].description}
+                      className="db-weather-icon"
+                    />
+                  )}
                 </div>
               ) : (
                 <p className="db-placeholder">No weather data available.</p>
@@ -634,7 +786,7 @@ export default function DashboardPage() {
                 <div className="db-dt-divider" />
                 <div className="db-datetime-block">
                   <span className="db-dt-label">Sessions</span>
-                  <span className="db-dt-value">{irrigationSessions.length}</span>
+                  <span className="db-dt-value">{filteredSessionsForTotals.length}</span>
                 </div>
               </div>
 
@@ -696,9 +848,10 @@ export default function DashboardPage() {
                 ) : (
                   <div className="db-chart-empty">
                     <span>📊</span>
-                    <p>No irrigation data available</p>
+                    <p>No irrigation data for {filterLabel}</p>
                     <p className="db-chart-empty-sub">
-                      Water usage will appear here after the first completed irrigation session.
+                      Water usage will appear here after a completed irrigation session{" "}
+                      {filterLabel === "today" ? "today" : `this ${filterType === "weekly" ? "week" : "month"}`}.
                     </p>
                   </div>
                 )}

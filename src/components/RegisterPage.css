@@ -39,7 +39,7 @@ html, body {
 }
 
 /* ============================================================
-   NAVBAR — identical to LoginPage
+   NAVBAR
    ============================================================ */
 .lp-nav {
   position: fixed;
@@ -246,10 +246,16 @@ html, body {
   font-weight: 400;
 }
 
-/* error border override */
-.register-form input[style*="red"] {
+/* ── INPUT ERROR STATE ── */
+.register-form input.input-error {
   border-color: var(--pink) !important;
   box-shadow: 0 0 0 3px rgba(230, 52, 98, 0.10) !important;
+  background: #fff8fb !important;
+}
+
+.register-form input.input-error:focus {
+  border-color: var(--pink) !important;
+  box-shadow: 0 0 0 3px rgba(230, 52, 98, 0.15) !important;
 }
 
 /* ── INLINE ERROR ── */
@@ -261,6 +267,19 @@ html, body {
   margin: -6px 0 8px 4px;
   text-align: left;
   display: block;
+}
+
+/* ── GENERAL ERROR BANNER ── */
+.reg-error-banner {
+  background: var(--pink-lt);
+  color: var(--pink-deep);
+  border: 1px solid #f8bdd8;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 14px;
+  text-align: left;
 }
 
 /* ── ADDRESS SUGGESTIONS ── */
@@ -293,6 +312,38 @@ html, body {
 .suggestions-list li:hover {
   background: var(--green-lt);
   color: var(--green);
+}
+
+/* ── PASSWORD WRAPPER (input + eye toggle) ── */
+.password-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.password-wrapper input[type="password"],
+.password-wrapper input[type="text"] {
+  width: 100%;
+  padding-right: 40px; /* room for the eye icon */
+}
+
+.pw-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-60%); /* offset for the 10px margin-bottom on input */
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: #bbb;
+  display: flex;
+  align-items: center;
+  transition: color 0.18s;
+  line-height: 1;
+}
+
+.pw-toggle:hover {
+  color: var(--text-soft);
 }
 
 /* ── CHECKBOX ── */
@@ -465,4 +516,17 @@ html, body {
     padding: 28px 20px;
     margin-left: 0;
   }
+}
+
+@media (max-width: 480px) {
+  .lp-nav { padding: 0 16px; }
+  .lp-nav__links { gap: 0; }
+  .lp-nav__links li button { padding: 8px 10px; font-size: 13px; }
+
+  .register-form {
+    border-radius: 14px;
+    padding: 24px 16px;
+  }
+
+  .register-form h2 { font-size: 22px; }
 }

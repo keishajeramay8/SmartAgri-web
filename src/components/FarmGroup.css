@@ -49,7 +49,6 @@
   font-weight: 400;
 }
 
-/* Profile block */
 .fg-profile {
   display: flex;
   align-items: center;
@@ -86,7 +85,6 @@
   color: #999;
 }
 
-/* Nav links */
 .fg-nav {
   display: flex;
   flex-direction: column;
@@ -116,7 +114,6 @@
   font-weight: 600;
 }
 
-/* Logout */
 .fg-logout {
   margin: 14px 12px 18px;
   padding: 9px 14px;
@@ -139,12 +136,11 @@
    MAIN
 ═══════════════════════════════════════════ */
 .fg-main {
- flex: 1;
+  flex: 1;
   padding: 18px 32px 30px;
   overflow-y: auto;
 }
 
-/* Top bar */
 .fg-topbar {
   display: flex;
   justify-content: space-between;
@@ -165,7 +161,6 @@
   color: #999;
 }
 
-/* Create button */
 .fg-create-btn {
   background: #e91e8c;
   color: #fff;
@@ -223,7 +218,6 @@
   gap: 18px;
 }
 
-/* Empty state */
 .fg-empty {
   grid-column: 1 / -1;
   text-align: center;
@@ -237,9 +231,7 @@
   margin-bottom: 12px;
 }
 
-.fg-empty p {
-  font-size: 14px;
-}
+.fg-empty p { font-size: 14px; }
 
 /* Card */
 .fg-card {
@@ -289,13 +281,29 @@
   margin-bottom: 4px;
 }
 
+/* ── Location row on card ── */
+.fg-card-location {
+  display: flex;
+  align-items: flex-start;
+  font-size: 11.5px;
+  color: #888;
+  margin-bottom: 5px;
+  line-height: 1.4;
+  gap: 4px;
+}
+
+.fg-card-location svg {
+  color: #e91e8c;
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+
 .fg-card-date {
   font-size: 12px;
   color: #aaa;
   margin-bottom: 14px;
 }
 
-/* Counts */
 .fg-card-counts {
   display: flex;
   gap: 16px;
@@ -317,13 +325,8 @@
   flex-shrink: 0;
 }
 
-.fg-dot-members {
-  background: #e91e8c;
-}
-
-.fg-dot-devices {
-  background: #1976d2;
-}
+.fg-dot-members { background: #e91e8c; }
+.fg-dot-devices { background: #1976d2; }
 
 /* ─── CARD ACTIONS ─── */
 .fg-card-actions {
@@ -350,9 +353,7 @@
   font-weight: 500;
 }
 
-.fg-btn:hover {
-  background: #f5f4f0;
-}
+.fg-btn:hover { background: #f5f4f0; }
 
 .fg-btn-members:hover {
   border-color: #f48fb1;
@@ -396,6 +397,11 @@
   backdrop-filter: blur(2px);
 }
 
+/* Stacked confirm dialog sits above members modal */
+.fg-overlay-top {
+  z-index: 1100;
+}
+
 .fg-modal {
   background: #ffffff;
   border-radius: 14px;
@@ -408,11 +414,8 @@
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.14);
 }
 
-.fg-modal-sm {
-  width: 360px;
-}
+.fg-modal-sm { width: 360px; }
 
-/* Modal header */
 .fg-modal-header {
   display: flex;
   justify-content: space-between;
@@ -441,7 +444,6 @@
   color: #444;
 }
 
-/* Labels and inputs */
 .fg-label {
   font-size: 12px;
   font-weight: 600;
@@ -462,18 +464,74 @@
   outline: none;
 }
 
-.fg-input:focus {
-  border-color: #e91e8c;
+.fg-input:focus { border-color: #e91e8c; }
+
+/* ── Address / location field ── */
+.fg-addr-wrapper {
+  position: relative;
+  width: 100%;
 }
 
-/* Body text (for confirm dialogs) */
+.fg-addr-icon {
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #e91e8c;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+}
+
+.fg-input-addr {
+  padding-left: 32px !important;
+}
+
+/* Autocomplete suggestions dropdown */
+.fg-suggestions {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  list-style: none;
+  padding: 4px 0;
+  z-index: 200;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.10);
+  overflow: hidden;
+}
+
+.fg-suggestions li {
+  padding: 9px 13px;
+  font-size: 12.5px;
+  color: #333;
+  cursor: pointer;
+  line-height: 1.4;
+  transition: background 0.13s;
+}
+
+.fg-suggestions li:hover {
+  background: #fce4f0;
+  color: #e91e8c;
+}
+
+/* Confirmation text after selecting */
+.fg-addr-confirmed {
+  font-size: 11.5px;
+  color: #16a34a;
+  font-weight: 500;
+  margin-top: -6px;
+  padding-left: 2px;
+}
+
 .fg-modal-body-text {
   font-size: 14px;
   color: #555;
   line-height: 1.6;
 }
 
-/* Footer */
 .fg-modal-footer {
   display: flex;
   justify-content: flex-end;
@@ -492,9 +550,7 @@
   transition: background 0.15s;
 }
 
-.fg-modal-cancel:hover {
-  background: #f5f4f0;
-}
+.fg-modal-cancel:hover { background: #f5f4f0; }
 
 .fg-modal-confirm {
   padding: 8px 18px;
@@ -508,9 +564,7 @@
   transition: background 0.15s;
 }
 
-.fg-modal-confirm:hover {
-  background: #c2185b;
-}
+.fg-modal-confirm:hover { background: #c2185b; }
 
 .fg-modal-danger {
   padding: 8px 18px;
@@ -524,9 +578,7 @@
   transition: background 0.15s;
 }
 
-.fg-modal-danger:hover {
-  background: #b91c1c;
-}
+.fg-modal-danger:hover { background: #b91c1c; }
 
 /* ─── SCROLLABLE LIST ─── */
 .fg-list {
@@ -578,6 +630,28 @@
   font-size: 13.5px;
   color: #1a1a1a;
   font-weight: 500;
+  flex: 1;
+}
+
+/* ── Remove member button ── */
+.fg-btn-remove-member {
+  background: none;
+  border: 1px solid #fca5a5;
+  color: #dc2626;
+  border-radius: 7px;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.fg-btn-remove-member:hover {
+  background: #fef2f2;
+  border-color: #f87171;
 }
 
 /* ─── DEVICE ROWS ─── */
@@ -603,18 +677,7 @@
   color: #aaa;
 }
 
-/* ─── NOTIFICATION BADGE ─── */
-.notif-badge {
-  background: #dc2626;
-  color: white;
-  font-size: 10px;
-  font-weight: 600;
-  border-radius: 20px;
-  padding: 1px 6px;
-  margin-left: 6px;
-}
-
-/* ─── NOTIFICATION NAV BADGE (sidebar) ─── */
+/* ─── NOTIFICATION BADGE (sidebar) ─── */
 .fg-notif-link {
   display: flex;
   align-items: center;

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { FaTrash, FaEdit } from "react-icons/fa";
+import { FaTrash } from "react-icons/fa";
 
 import { auth, db } from "../firebase";
 import {
@@ -9,11 +9,11 @@ import {
   collection,
   getDocs,
   deleteDoc,
-  updateDoc,
   query,
   where,
   onSnapshot,
   orderBy,
+  writeBatch,
 } from "firebase/firestore";
 
 import { signOut } from "firebase/auth";
@@ -27,13 +27,7 @@ export default function FarmerPage() {
   const [userName, setUserName] = useState({ first: "", last: "" });
   const [photoURL, setPhotoURL] = useState("");
   const [unreadCount, setUnreadCount] = useState(0);
-  const [pendingCount, setPendingCount] = useState(0); // ← NEW
-
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editFarmer, setEditFarmer] = useState(null);
-  const [editFirstName, setEditFirstName] = useState("");
-  const [editLastName, setEditLastName] = useState("");
-  const [editEmail, setEditEmail] = useState("");
+  const [pendingCount, setPendingCount] = useState(0);
 
   const [showRemoveModal, setShowRemoveModal] = useState(false);
   const [selectedFarmer, setSelectedFarmer] = useState(null);
@@ -75,7 +69,7 @@ export default function FarmerPage() {
     return () => unsubscribe();
   }, []);
 
-  // ─── Realtime Pending Farmer Requests ───
+  // Realtime Pending Farmer Requests
   useEffect(() => {
     const user = auth.currentUser;
     if (!user) return;
@@ -96,7 +90,7 @@ export default function FarmerPage() {
           countMap[groupId] = 0;
           const joinRef = collection(db, "farmgroups", groupId, "joinRequests");
           const unsub = onSnapshot(joinRef, (snap) => {
-            countMap[groupId] = snap.size;
+            countMap[groupId] = snap.docs.filter((d) => !d.data().seenByAdmin).length;
             const total = Object.values(countMap).reduce((a, b) => a + b, 0);
             setPendingCount(total);
           });
@@ -156,6 +150,58 @@ export default function FarmerPage() {
     loadFarmers();
   }, []);
 
+  // ── MARK NOTIFICATIONS AS READ ────────────────────────────────────────────
+  const handleNotificationsNav = async () => {
+    const user = auth.currentUser;
+    if (!user) return;
+    try {
+      const q = query(
+        collection(db, "users", user.uid, "notifications"),
+        where("read", "==", false)
+      );
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        const batch = writeBatch(db);
+        snap.docs.forEach((d) => batch.update(d.ref, { read: true }));
+        await batch.commit();
+      }
+      setUnreadCount(0);
+    } catch (err) {
+      console.error("Failed to mark notifications as read:", err);
+    }
+  };
+
+  // ── MARK JOIN REQUESTS AS SEEN ────────────────────────────────────────────
+  const handleRegisterFarmerNav = async () => {
+    const user = auth.currentUser;
+    if (!user) return;
+    try {
+      const groupQuery = query(
+        collection(db, "farmgroups"),
+        where("createdBy", "==", user.uid)
+      );
+      const groupSnapshot = await getDocs(groupQuery);
+      const batch = writeBatch(db);
+      let hasPending = false;
+
+      for (const groupDoc of groupSnapshot.docs) {
+        const joinRef = collection(db, "farmgroups", groupDoc.id, "joinRequests");
+        const joinSnap = await getDocs(
+          query(joinRef, where("seenByAdmin", "==", false))
+        );
+        joinSnap.docs.forEach((d) => {
+          batch.update(d.ref, { seenByAdmin: true });
+          hasPending = true;
+        });
+      }
+
+      if (hasPending) await batch.commit();
+      setPendingCount(0);
+    } catch (err) {
+      console.error("Failed to mark join requests as seen:", err);
+    }
+  };
+
   const openRemoveModal = (farmer) => {
     setSelectedFarmer(farmer);
     setShowRemoveModal(true);
@@ -170,35 +216,6 @@ export default function FarmerPage() {
       setFarmers((prev) => prev.filter((f) => f.id !== selectedFarmer.id));
       setShowRemoveModal(false);
       setSelectedFarmer(null);
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  const handleEditClick = (farmer) => {
-    setEditFarmer(farmer);
-    setEditFirstName(farmer.firstName || "");
-    setEditLastName(farmer.lastName || "");
-    setEditEmail(farmer.email || "");
-    setShowEditModal(true);
-  };
-
-  const handleUpdateFarmer = async () => {
-    if (!editFarmer) return;
-    try {
-      await updateDoc(doc(db, "users", editFarmer.id), {
-        firstName: editFirstName,
-        lastName: editLastName,
-        email: editEmail,
-      });
-      setFarmers((prev) =>
-        prev.map((f) =>
-          f.id === editFarmer.id
-            ? { ...f, firstName: editFirstName, lastName: editLastName, email: editEmail }
-            : f
-        )
-      );
-      setShowEditModal(false);
     } catch (error) {
       console.error(error);
     }
@@ -245,7 +262,11 @@ export default function FarmerPage() {
 
         <nav className="fp-nav">
           <NavLink to="/dashboard" className={navClass}>Dashboard</NavLink>
-          <NavLink to="/register-farmer" className={navClass}>
+          <NavLink
+            to="/register-farmer"
+            className={navClass}
+            onClick={handleRegisterFarmerNav}
+          >
             <span className="fp-notif-link">
               Register Farmer
               {pendingCount > 0 && (
@@ -256,7 +277,11 @@ export default function FarmerPage() {
             </span>
           </NavLink>
           <NavLink to="/farmers" className={navClass}>Farmers</NavLink>
-          <NavLink to="/notifications" className={navClass}>
+          <NavLink
+            to="/notifications"
+            className={navClass}
+            onClick={handleNotificationsNav}
+          >
             <span className="fp-notif-link">
               Notification
               {unreadCount > 0 && (
@@ -343,12 +368,6 @@ export default function FarmerPage() {
 
                 <div className="fp-row-actions">
                   <button
-                    className="fp-btn fp-btn-edit"
-                    onClick={() => handleEditClick(f)}
-                  >
-                    <FaEdit size={11} /> Edit
-                  </button>
-                  <button
                     className="fp-btn fp-btn-remove"
                     onClick={() => openRemoveModal(f)}
                   >
@@ -360,47 +379,6 @@ export default function FarmerPage() {
           )}
         </div>
       </main>
-
-      {/* ── EDIT MODAL ── */}
-      {showEditModal && (
-        <div className="fp-overlay">
-          <div className="fp-modal">
-            <div className="fp-modal-header">
-              <h3>Edit Farmer</h3>
-              <button className="fp-modal-x" onClick={() => setShowEditModal(false)}>✕</button>
-            </div>
-
-            <label className="fp-label">First Name</label>
-            <input
-              className="fp-input"
-              type="text"
-              value={editFirstName}
-              onChange={(e) => setEditFirstName(e.target.value)}
-            />
-
-            <label className="fp-label">Last Name</label>
-            <input
-              className="fp-input"
-              type="text"
-              value={editLastName}
-              onChange={(e) => setEditLastName(e.target.value)}
-            />
-
-            <label className="fp-label">Email</label>
-            <input
-              className="fp-input"
-              type="email"
-              value={editEmail}
-              onChange={(e) => setEditEmail(e.target.value)}
-            />
-
-            <div className="fp-modal-footer">
-              <button className="fp-modal-cancel" onClick={() => setShowEditModal(false)}>Cancel</button>
-              <button className="fp-modal-confirm" onClick={handleUpdateFarmer}>Save</button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ── REMOVE CONFIRM MODAL ── */}
       {showRemoveModal && selectedFarmer && (
