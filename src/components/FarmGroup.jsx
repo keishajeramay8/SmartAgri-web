@@ -17,7 +17,10 @@ import {
   orderBy,
 } from "firebase/firestore";
 import { signOut } from "firebase/auth";
+import axios from "axios";
 import "./FarmGroup.css";
+
+const GEOAPIFY_KEY = "ceea5600e9214d0cb5719308012683fd";
 
 export default function FarmGroup() {
   const navigate = useNavigate();
@@ -29,6 +32,12 @@ export default function FarmGroup() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [farmName, setFarmName] = useState("");
   const [farmCode, setFarmCode] = useState("");
+  const [farmAddress, setFarmAddress] = useState("");
+  const [farmAddressLat, setFarmAddressLat] = useState(null);
+  const [farmAddressLon, setFarmAddressLon] = useState(null);
+  const [farmAddressSuggestions, setFarmAddressSuggestions] = useState([]);
+  const [showFarmAddressSuggestions, setShowFarmAddressSuggestions] = useState(false);
+  const [farmAddressError, setFarmAddressError] = useState("");
 
   const [showMembersModal, setShowMembersModal] = useState(false);
   const [members, setMembers] = useState([]);
@@ -48,10 +57,22 @@ export default function FarmGroup() {
   const [editGroup, setEditGroup] = useState(null);
 
   const [unreadCount, setUnreadCount] = useState(0);
-  const [pendingCount, setPendingCount] = useState(0); // ← NEW
+  const [pendingCount, setPendingCount] = useState(0);
   const [groupCounts, setGroupCounts] = useState({});
 
   const navClass = ({ isActive }) => (isActive ? "active" : undefined);
+
+  // ── Reset create modal fields ──
+  const resetCreateModal = () => {
+    setFarmName("");
+    setFarmCode("");
+    setFarmAddress("");
+    setFarmAddressLat(null);
+    setFarmAddressLon(null);
+    setFarmAddressError("");
+    setFarmAddressSuggestions([]);
+    setShowFarmAddressSuggestions(false);
+  };
 
   // REALTIME UNREAD NOTIFICATIONS COUNT
   useEffect(() => {
@@ -104,13 +125,11 @@ export default function FarmGroup() {
     return () => unsubscribe();
   }, []);
 
-  // ─── Realtime Pending Farmer Requests ───
+  // REALTIME PENDING FARMER REQUESTS
   useEffect(() => {
     const user = auth.currentUser;
     if (!user) return;
-
     let unsubscribers = [];
-
     const setupListeners = async () => {
       try {
         const groupQuery = query(
@@ -119,7 +138,6 @@ export default function FarmGroup() {
         );
         const groupSnapshot = await getDocs(groupQuery);
         const countMap = {};
-
         groupSnapshot.docs.forEach((groupDoc) => {
           const groupId = groupDoc.id;
           countMap[groupId] = 0;
@@ -135,7 +153,6 @@ export default function FarmGroup() {
         console.error("Error setting up pending count listeners:", err);
       }
     };
-
     setupListeners();
     return () => unsubscribers.forEach((fn) => fn());
   }, []);
@@ -165,11 +182,37 @@ export default function FarmGroup() {
   const getInitials = (first = "", last = "") =>
     `${first.charAt(0)}${last.charAt(0)}`.toUpperCase();
 
+  // ADDRESS AUTOCOMPLETE
+  const fetchFarmAddressSuggestions = async (input) => {
+    try {
+      const res = await axios.get("https://api.geoapify.com/v1/geocode/autocomplete", {
+        params: { text: input, limit: 5, lang: "en", country: "PH", apiKey: GEOAPIFY_KEY },
+      });
+      setFarmAddressSuggestions(res.data.features || []);
+      setShowFarmAddressSuggestions(true);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleSelectFarmAddress = (place) => {
+    setFarmAddress(place.properties.formatted);
+    setFarmAddressLat(place.properties.lat);
+    setFarmAddressLon(place.properties.lon);
+    setFarmAddressError("");
+    setFarmAddressSuggestions([]);
+    setShowFarmAddressSuggestions(false);
+  };
+
   // CREATE FARM GROUP
   const handleAddFarmGroup = async () => {
     const user = auth.currentUser;
     if (!farmName || !farmCode) {
       alert("Please fill all fields");
+      return;
+    }
+    if (!farmAddress || !farmAddressLat || !farmAddressLon) {
+      setFarmAddressError("Please select a Philippine address");
       return;
     }
     try {
@@ -185,11 +228,13 @@ export default function FarmGroup() {
       await addDoc(collection(db, "farmgroups"), {
         farmgroupName: farmName,
         farmgroupId: farmCode,
+        farmAddress: farmAddress,
+        farmLat: farmAddressLat,
+        farmLon: farmAddressLon,
         createdBy: user.uid,
         createdAt: new Date(),
       });
-      setFarmName("");
-      setFarmCode("");
+      resetCreateModal();
       setShowCreateModal(false);
     } catch (error) {
       console.error("Error creating farm group:", error);
@@ -356,7 +401,13 @@ export default function FarmGroup() {
               Manage your registered farm groups and their members
             </p>
           </div>
-          <button className="fg-create-btn" onClick={() => setShowCreateModal(true)}>
+          <button
+            className="fg-create-btn"
+            onClick={() => {
+              resetCreateModal();
+              setShowCreateModal(true);
+            }}
+          >
             + Create Group
           </button>
         </div>
@@ -400,6 +451,10 @@ export default function FarmGroup() {
               <h3 className="fg-card-name">{f.farmgroupName}</h3>
               <p className="fg-card-date">{formatDate(f.createdAt)}</p>
 
+              {f.farmAddress && (
+                <p className="fg-card-address">📍 {f.farmAddress}</p>
+              )}
+
               <div className="fg-card-counts">
                 <span className="fg-count fg-count-members">
                   <span className="fg-dot fg-dot-members" />
@@ -432,12 +487,13 @@ export default function FarmGroup() {
 
       {/* ── CREATE MODAL ── */}
       {showCreateModal && (
-        <div className="fg-overlay">
+        <div className="fg-overlay" onClick={(e) => { if (e.target === e.currentTarget) { resetCreateModal(); setShowCreateModal(false); } }}>
           <div className="fg-modal">
             <div className="fg-modal-header">
               <h3>Create Farm Group</h3>
-              <button className="fg-modal-x" onClick={() => setShowCreateModal(false)}>✕</button>
+              <button className="fg-modal-x" onClick={() => { resetCreateModal(); setShowCreateModal(false); }}>✕</button>
             </div>
+
             <label className="fg-label">Farm Group Name</label>
             <input
               className="fg-input"
@@ -446,6 +502,7 @@ export default function FarmGroup() {
               value={farmName}
               onChange={(e) => setFarmName(e.target.value)}
             />
+
             <label className="fg-label">Farm Group Code</label>
             <input
               className="fg-input"
@@ -454,8 +511,47 @@ export default function FarmGroup() {
               value={farmCode}
               onChange={(e) => setFarmCode(e.target.value)}
             />
+
+            <label className="fg-label">Farm Address</label>
+            <div style={{ position: "relative" }}>
+              <input
+                className="fg-input"
+                type="text"
+                placeholder="Enter farm location"
+                value={farmAddress}
+                autoComplete="off"
+                style={{ borderColor: farmAddressError ? "#E63462" : "" }}
+                onChange={(e) => {
+                  setFarmAddress(e.target.value);
+                  setFarmAddressLat(null);
+                  setFarmAddressLon(null);
+                  if (farmAddressError) setFarmAddressError("");
+                  if (e.target.value) fetchFarmAddressSuggestions(e.target.value);
+                  else {
+                    setFarmAddressSuggestions([]);
+                    setShowFarmAddressSuggestions(false);
+                  }
+                }}
+              />
+              {showFarmAddressSuggestions && farmAddressSuggestions.length > 0 && (
+                <ul className="fg-suggestions-list">
+                  {farmAddressSuggestions.map((item) => (
+                    <li
+                      key={item.properties.place_id}
+                      onClick={() => handleSelectFarmAddress(item)}
+                    >
+                      {item.properties.formatted}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            {farmAddressError && (
+              <span className="fg-address-error">{farmAddressError}</span>
+            )}
+
             <div className="fg-modal-footer">
-              <button className="fg-modal-cancel" onClick={() => setShowCreateModal(false)}>Cancel</button>
+              <button className="fg-modal-cancel" onClick={() => { resetCreateModal(); setShowCreateModal(false); }}>Cancel</button>
               <button className="fg-modal-confirm" onClick={handleAddFarmGroup}>Create</button>
             </div>
           </div>

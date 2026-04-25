@@ -27,7 +27,10 @@ const NotificationPage = ({ fcmMessage }) => {
   const [notifToDelete, setNotifToDelete] = useState(null);
   const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
 
-  const [pendingCount, setPendingCount] = useState(0); // ← NEW
+  const [pendingCount, setPendingCount] = useState(0);
+  const [seenPendingCount] = useState(
+    () => parseInt(localStorage.getItem("seenPendingCount") || "0", 10)
+  );
 
   const unreadCount = notifications.filter((n) => !n.read).length;
 
@@ -75,7 +78,7 @@ const NotificationPage = ({ fcmMessage }) => {
     fetchUserName();
   }, [currentUser]);
 
-  // ─── Fetch Notifications ───
+  // ─── Fetch Notifications (realtime) ───
   useEffect(() => {
     if (!currentUser) return;
     const q = query(
@@ -94,6 +97,31 @@ const NotificationPage = ({ fcmMessage }) => {
       setNotifications(list);
     });
     return () => unsubscribe();
+  }, [currentUser]);
+
+  // ─── Auto-mark all as read when page is opened ───
+  useEffect(() => {
+    if (!currentUser) return;
+    const autoMarkAllRead = async () => {
+      try {
+        const snapshot = await getDocs(
+          collection(db, "users", currentUser.uid, "notifications")
+        );
+        const unreadDocs = snapshot.docs.filter((d) => !d.data().read);
+        if (unreadDocs.length === 0) return;
+        await Promise.all(
+          unreadDocs.map((d) =>
+            updateDoc(
+              doc(db, "users", currentUser.uid, "notifications", d.id),
+              { read: true }
+            )
+          )
+        );
+      } catch (err) {
+        console.error("Auto-mark read error:", err);
+      }
+    };
+    autoMarkAllRead();
   }, [currentUser]);
 
   // ─── Realtime Pending Farmer Requests ───
@@ -187,6 +215,8 @@ const NotificationPage = ({ fcmMessage }) => {
     }
   };
 
+  const newPendingCount = Math.max(0, pendingCount - seenPendingCount);
+
   if (!currentUser) return <p>Loading user...</p>;
 
   return (
@@ -218,9 +248,9 @@ const NotificationPage = ({ fcmMessage }) => {
           <NavLink to="/register-farmer" className={navClass}>
             <span className="notif-nav-link">
               Register Farmer
-              {pendingCount > 0 && (
+              {newPendingCount > 0 && (
                 <span className="notif-badge">
-                  {pendingCount > 99 ? "99+" : pendingCount}
+                  {newPendingCount > 99 ? "99+" : newPendingCount}
                 </span>
               )}
             </span>

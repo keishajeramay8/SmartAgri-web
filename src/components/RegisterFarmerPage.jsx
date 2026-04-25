@@ -27,7 +27,12 @@ export default function RegisterFarmerPage() {
   const [photoURL, setPhotoURL] = useState("");
   const [loading, setLoading] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [pendingCount, setPendingCount] = useState(0); // ← NEW
+  const [pendingCount, setPendingCount] = useState(0);
+
+  // Read the previously seen count from localStorage (set by this page on last visit)
+  const [seenPendingCount, setSeenPendingCount] = useState(
+    () => parseInt(localStorage.getItem("seenPendingCount") || "0", 10)
+  );
 
   const navClass = ({ isActive }) => (isActive ? "active" : undefined);
 
@@ -73,7 +78,10 @@ export default function RegisterFarmerPage() {
     return () => unsubscribe();
   }, []);
 
-  // ─── Realtime Pending Farmer Requests (for badge + list) ───
+  // ─── Realtime Pending Farmer Requests ───
+  // While ON this page, continuously update seenPendingCount so the badge
+  // stays cleared. When the user leaves and comes back with new requests,
+  // the badge will show the difference.
   useEffect(() => {
     const user = auth.currentUser;
     if (!user) return;
@@ -89,8 +97,6 @@ export default function RegisterFarmerPage() {
         );
         const groupSnapshot = await getDocs(groupQuery);
         const countMap = {};
-
-        // We'll track pending farmers across all groups reactively
         const farmersMap = {};
 
         for (const groupDoc of groupSnapshot.docs) {
@@ -106,7 +112,12 @@ export default function RegisterFarmerPage() {
             const total = Object.values(countMap).reduce((a, b) => a + b, 0);
             setPendingCount(total);
 
-            // Also update the farmer list for this group
+            // ── KEY CHANGE: since the admin is viewing this page,
+            //    mark the current total as "seen" so badge clears
+            localStorage.setItem("seenPendingCount", String(total));
+            setSeenPendingCount(total);
+
+            // Update farmer list for this group
             const farmerList = await Promise.all(
               snap.docs.map(async (requestDoc) => {
                 const farmerUid = requestDoc.id;
@@ -121,7 +132,6 @@ export default function RegisterFarmerPage() {
             );
             farmersMap[groupId] = farmerList;
 
-            // Flatten all groups into one list
             const allFarmers = Object.values(farmersMap).flat();
             setFarmers(allFarmers);
             setLoading(false);
@@ -153,7 +163,6 @@ export default function RegisterFarmerPage() {
       await deleteDoc(
         doc(db, "farmgroups", farmer.groupId, "joinRequests", farmer.id)
       );
-      // List updates automatically via onSnapshot
     } catch (error) {
       console.error(error);
     }
@@ -165,11 +174,14 @@ export default function RegisterFarmerPage() {
       await deleteDoc(
         doc(db, "farmgroups", farmer.groupId, "joinRequests", farmer.id)
       );
-      // List updates automatically via onSnapshot
     } catch (error) {
       console.error(error);
     }
   };
+
+  // On this page the badge for pending requests is always 0 (we're looking at them)
+  // For other pages in the sidebar, newPendingCount drives the badge
+  const newPendingCount = Math.max(0, pendingCount - seenPendingCount);
 
   return (
     <div className="f-dashboard">
@@ -200,9 +212,9 @@ export default function RegisterFarmerPage() {
           <NavLink to="/register-farmer" className={navClass}>
             <span className="f-notif-link">
               Register Farmer
-              {pendingCount > 0 && (
+              {newPendingCount > 0 && (
                 <span className="f-notif-badge">
-                  {pendingCount > 99 ? "99+" : pendingCount}
+                  {newPendingCount > 99 ? "99+" : newPendingCount}
                 </span>
               )}
             </span>

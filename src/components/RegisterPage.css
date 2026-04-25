@@ -429,6 +429,46 @@ html, body {
 }
 
 /* ============================================================
+   VERIFICATION SCREEN
+   ============================================================ */
+.verification-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+}
+
+.verification-icon {
+  font-size: 3rem;
+  margin: 8px 0;
+}
+
+.verification-note {
+  font-size: 0.85rem;
+  color: #718096;
+}
+
+.resend-container {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.resend-btn {
+  background: transparent !important;
+  border: 1.5px solid currentColor !important;
+  color: #38a169 !important;
+}
+
+.resend-msg {
+  font-size: 0.8rem;
+  color: #38a169;
+}
+
+/* ============================================================
    ANIMATION
    ============================================================ */
 @keyframes lp-fadeUp {
