@@ -6,16 +6,15 @@ import { getMessaging, getToken, onMessage } from "firebase/messaging";
 import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyANI1nMfarUwm08XwccpVg8zqSsAqZjytA",
-  authDomain: "smartagri-62ae1.firebaseapp.com",
-  databaseURL: "https://smartagri-62ae1-default-rtdb.firebaseio.com",
-  projectId: "smartagri-62ae1",
-  storageBucket: "smartagri-62ae1.firebasestorage.app",   // ← try this first; if still broken, change to smartagri-62ae1.firebasestorage.app
-  messagingSenderId: "536057132104",
-  appId: "1:536057132104:web:4fa6289aa595dec27b547d",
-  measurementId: "G-FVCNR88T6C"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
-
 const app = initializeApp(firebaseConfig);
 
 export const auth      = getAuth(app);
