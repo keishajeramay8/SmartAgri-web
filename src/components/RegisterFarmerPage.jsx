@@ -29,6 +29,7 @@ export default function RegisterFarmerPage() {
   const [loading, setLoading] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [pendingCount, setPendingCount] = useState(0);
+  const [search, setSearch] = useState("");
 
   const navClass = ({ isActive }) => (isActive ? "active" : undefined);
 
@@ -74,8 +75,7 @@ export default function RegisterFarmerPage() {
     return () => unsubscribe();
   }, []);
 
-  // ─── Mark all current join requests as seen (clears the badge) ───
-  // Called once on mount so the admin badge goes to 0 while on this page.
+  // Mark all current join requests as seen (clears the badge)
   useEffect(() => {
     const markAllSeen = async () => {
       const user = auth.currentUser;
@@ -106,7 +106,7 @@ export default function RegisterFarmerPage() {
     markAllSeen();
   }, []);
 
-  // ─── Realtime Pending Farmer Requests — only UNSEEN count for badge ───
+  // Realtime Pending Farmer Requests
   useEffect(() => {
     const user = auth.currentUser;
     if (!user) return;
@@ -133,12 +133,10 @@ export default function RegisterFarmerPage() {
           const joinRef = collection(db, "farmgroups", groupId, "joinRequests");
 
           const unsub = onSnapshot(joinRef, async (snap) => {
-            // Badge: only count requests not yet seen
             countMap[groupId] = snap.docs.filter((d) => !d.data().seenByAdmin).length;
             const total = Object.values(countMap).reduce((a, b) => a + b, 0);
             setPendingCount(total);
 
-            // Table: show ALL pending requests (seen or not)
             const farmerList = await Promise.all(
               snap.docs.map(async (requestDoc) => {
                 const farmerUid = requestDoc.id;
@@ -196,6 +194,15 @@ export default function RegisterFarmerPage() {
       console.error(error);
     }
   };
+
+  const filtered = farmers.filter((f) => {
+    const term = search.toLowerCase();
+    return (
+      (f.firstName || "").toLowerCase().includes(term) ||
+      (f.lastName || "").toLowerCase().includes(term) ||
+      (f.email || "").toLowerCase().includes(term)
+    );
+  });
 
   return (
     <div className="f-dashboard">
@@ -261,6 +268,13 @@ export default function RegisterFarmerPage() {
             <h1 className="f-page-title">PENDING FARMER REQUESTS</h1>
             <p className="f-page-sub">Review and manage incoming join requests</p>
           </div>
+          <input
+            className="fp-search"
+            type="text"
+            placeholder="Search by name or email..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
         </div>
 
         <div className="f-stats">
@@ -269,10 +283,8 @@ export default function RegisterFarmerPage() {
             <p className="f-stat-val">{farmers.length}</p>
           </div>
           <div className="f-stat">
-            <p className="f-stat-label">Farm Groups</p>
-            <p className="f-stat-val">
-              {[...new Set(farmers.map((f) => f.groupId))].length}
-            </p>
+            <p className="f-stat-label">Showing</p>
+            <p className="f-stat-val">{filtered.length}</p>
           </div>
           <div className="f-stat">
             <p className="f-stat-label">Status</p>
@@ -285,9 +297,9 @@ export default function RegisterFarmerPage() {
         <div className="f-table-section">
           <div className="f-card-header">
             <h2 className="f-card-title">Join Requests</h2>
-            {farmers.length > 0 && (
+            {filtered.length > 0 && (
               <span className="f-pending-badge">
-                {farmers.length} pending
+                {filtered.length} pending
               </span>
             )}
           </div>
@@ -302,7 +314,7 @@ export default function RegisterFarmerPage() {
             <div className="f-loading">Loading requests...</div>
           )}
 
-          {!loading && farmers.map((f) => (
+          {!loading && filtered.map((f) => (
             <div className="f-row" key={f.id}>
               <span>{f.firstName || "—"}</span>
               <span>{f.lastName || "—"}</span>
@@ -318,10 +330,10 @@ export default function RegisterFarmerPage() {
             </div>
           ))}
 
-          {!loading && farmers.length === 0 && (
+          {!loading && filtered.length === 0 && (
             <div className="f-empty">
               <span>🌱</span>
-              <p>No pending requests at the moment.</p>
+              <p>{search ? "No results found." : "No pending requests at the moment."}</p>
             </div>
           )}
         </div>

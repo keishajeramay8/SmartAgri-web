@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { auth, db, storage } from "../firebase";
 import {
@@ -25,6 +25,84 @@ import {
   getDownloadURL,
 } from "firebase/storage";
 import "./ProfilePage.css";
+
+// ── Google Places script loader ──────────────────────────────────
+const GOOGLE_MAPS_API_KEY = "YOUR_GOOGLE_MAPS_API_KEY"; // 🔑 Replace with your key
+
+function loadGoogleMapsScript(apiKey) {
+  return new Promise((resolve, reject) => {
+    if (window.google && window.google.maps && window.google.maps.places) {
+      resolve();
+      return;
+    }
+    if (document.getElementById("google-maps-script")) {
+      // Script tag already added, wait for it
+      const check = setInterval(() => {
+        if (window.google && window.google.maps && window.google.maps.places) {
+          clearInterval(check);
+          resolve();
+        }
+      }, 100);
+      return;
+    }
+    const script = document.createElement("script");
+    script.id = "google-maps-script";
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
+    script.async = true;
+    script.defer = true;
+    script.onload = resolve;
+    script.onerror = () => reject(new Error("Failed to load Google Maps script"));
+    document.head.appendChild(script);
+  });
+}
+
+// ── Address Autocomplete Input Component ────────────────────────
+function AddressAutocompleteInput({ value, onChange, onPlaceSelect, className, placeholder }) {
+  const inputRef        = useRef(null);
+  const autocompleteRef = useRef(null);
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    loadGoogleMapsScript(GOOGLE_MAPS_API_KEY)
+      .then(() => setReady(true))
+      .catch((err) => console.error("Google Maps load error:", err));
+  }, []);
+
+  useEffect(() => {
+    if (!ready || !inputRef.current) return;
+    if (autocompleteRef.current) return; // already initialized
+
+    const ac = new window.google.maps.places.Autocomplete(inputRef.current, {
+      types: ["geocode"],
+      fields: ["formatted_address", "geometry", "address_components"],
+    });
+
+    ac.addListener("place_changed", () => {
+      const place = ac.getPlace();
+      if (!place.geometry) return;
+
+      const lat = place.geometry.location.lat();
+      const lon = place.geometry.location.lng();
+      const formatted = place.formatted_address || "";
+
+      onPlaceSelect({ address: formatted, lat, lon });
+      onChange(formatted);
+    });
+
+    autocompleteRef.current = ac;
+  }, [ready, onPlaceSelect, onChange]);
+
+  return (
+    <input
+      ref={inputRef}
+      className={className}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      autoComplete="off"
+    />
+  );
+}
 
 export default function ProfilePage() {
   const navigate = useNavigate();
@@ -144,7 +222,7 @@ export default function ProfilePage() {
   const getInitials = (first = "", last = "") =>
     `${first.charAt(0)}${last.charAt(0)}`.toUpperCase();
 
-  // ── MARK NOTIFICATIONS AS READ ────────────────────────────────────────────
+  // ── Mark notifications as read ──────────────────────────────────
   const handleNotificationsNav = async () => {
     const user = auth.currentUser;
     if (!user) return;
@@ -165,7 +243,7 @@ export default function ProfilePage() {
     }
   };
 
-  // ── MARK JOIN REQUESTS AS SEEN ────────────────────────────────────────────
+  // ── Mark join requests as seen ──────────────────────────────────
   const handleRegisterFarmerNav = async () => {
     const user = auth.currentUser;
     if (!user) return;
@@ -195,6 +273,16 @@ export default function ProfilePage() {
       console.error("Failed to mark join requests as seen:", err);
     }
   };
+
+  // ── Handle place selection from autocomplete ─────────────────────
+  const handlePlaceSelect = useCallback(({ address: selectedAddress, lat, lon }) => {
+    setForm((prev) => ({
+      ...prev,
+      address: selectedAddress,
+      lat,
+      lon,
+    }));
+  }, []);
 
   // ── Photo selection ─────────────────────────────────────────────
   const handlePhotoChange = (e) => {
@@ -277,12 +365,15 @@ export default function ProfilePage() {
         setPhotoURL(newPhotoURL);
       }
 
+      const latVal = form.lat !== "" && form.lat !== null ? parseFloat(form.lat) : null;
+      const lonVal = form.lon !== "" && form.lon !== null ? parseFloat(form.lon) : null;
+
       await updateDoc(doc(db, "users", user.uid), {
         firstName: form.firstName.trim(),
         lastName:  form.lastName.trim(),
         address:   form.address?.trim() || "",
-        lat:       parseFloat(form.lat) || null,
-        lon:       parseFloat(form.lon) || null,
+        lat:       latVal,
+        lon:       lonVal,
         photoURL:  newPhotoURL || null,
       });
 
@@ -422,7 +513,7 @@ export default function ProfilePage() {
 
         <div className="pf-content-grid">
 
-          {/* LEFT — Avatar + quick info */}
+          {/* ROW 1 LEFT — Avatar card */}
           <div className="pf-left-col">
             <div className="pf-card pf-avatar-card">
 
@@ -485,17 +576,11 @@ export default function ProfilePage() {
                 </button>
               )}
             </div>
-
-            {/* Address only — coordinates removed */}
-            <div className="pf-card pf-info-card">
-              <p className="pf-info-label">Address</p>
-              <p className="pf-info-val">{address || "—"}</p>
-            </div>
           </div>
 
           {/* RIGHT — Edit form */}
           <div className="pf-right-col">
-            <div className="pf-card">
+            <div className="pf-card pf-account-card">
               <div className="pf-card-header">
                 <h2 className="pf-card-title">Account Details</h2>
                 {editMode && <span className="pf-editing-badge">Editing</span>}
@@ -540,16 +625,30 @@ export default function ProfilePage() {
                 </div>
 
                 <div className="pf-field pf-field--full">
-                  <label className="pf-field-label">Address</label>
-                  {editMode
-                    ? <input
-                        className="pf-input"
+                  <label className="pf-field-label">
+                    Address
+                    {editMode && (
+                      <span className="pf-field-label-hint"> — start typing to search</span>
+                    )}
+                  </label>
+                  {editMode ? (
+                    <div className="pf-address-wrap">
+                      <AddressAutocompleteInput
                         value={form.address}
-                        onChange={(e) => setForm({ ...form, address: e.target.value })}
-                        placeholder="City, Province, Country"
+                        onChange={(val) => setForm((prev) => ({ ...prev, address: val }))}
+                        onPlaceSelect={handlePlaceSelect}
+                        className="pf-input"
+                        placeholder="Search for your address…"
                       />
-                    : <p className="pf-field-val">{address || "—"}</p>
-                  }
+                      {form.lat && form.lon && (
+                        <p className="pf-coords-hint">
+                          📍 {parseFloat(form.lat).toFixed(5)}, {parseFloat(form.lon).toFixed(5)}
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="pf-field-val">{address || "—"}</p>
+                  )}
                 </div>
               </div>
 
@@ -579,8 +678,8 @@ export default function ProfilePage() {
               )}
             </div>
 
-            {/* Change Password — hint line removed */}
-            <div className="pf-card">
+            {/* Change Password */}
+            <div className="pf-card pf-security-card">
               <div className="pf-card-header">
                 <h2 className="pf-card-title">Security</h2>
                 <button

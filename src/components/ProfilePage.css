@@ -157,7 +157,8 @@ html, body {
    MAIN
 ════════════════════════════════ */
 .pf-main {
-flex: 1;
+  flex: 1;
+  min-width: 0;
   padding: 18px 32px 30px;
   overflow-y: auto;
 }
@@ -175,13 +176,19 @@ flex: 1;
   color: #999;
 }
 
-/* ── Content grid ── */
+/* ── Content grid — named areas ── */
 .pf-content-grid {
   display: grid;
-  grid-template-columns: 300px 1fr;
+  grid-template-columns: 300px minmax(0, 1fr);
+  grid-template-areas:
+    "profile  account"
+    "security security";
   gap: 18px;
-  align-items: start;
 }
+
+.pf-avatar-card   { grid-area: profile;  align-self: stretch; }
+.pf-account-card  { grid-area: account;  align-self: stretch; }
+.pf-security-card { grid-area: security; align-self: stretch; box-sizing: border-box; }
 
 /* ── Card base ── */
 .pf-card {
@@ -194,7 +201,9 @@ flex: 1;
 /* ════════════════════════════════
    LEFT COLUMN
 ════════════════════════════════ */
-.pf-left-col { display: flex; flex-direction: column; gap: 18px; }
+.pf-left-col {
+  display: contents;
+}
 
 .pf-avatar-card {
   display: flex;
@@ -295,37 +304,26 @@ flex: 1;
 }
 .pf-edit-btn:hover { background: #c2177a; }
 
-/* Quick info card */
-.pf-info-card { padding: 18px 20px; }
-.pf-info-label {
-  font-size: 11px;
-  color: #aaa;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-}
-.pf-info-val {
-  font-size: 13px;
-  color: #1a1a1a;
-  margin-top: 4px;
-  word-break: break-word;
-}
-
 /* ════════════════════════════════
    RIGHT COLUMN
 ════════════════════════════════ */
-.pf-right-col { display: flex; flex-direction: column; gap: 19px; }
+.pf-right-col {
+  display: contents;
+}
 
 .pf-card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 19px;
+  height: 48px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid #ece9e4;
 }
 .pf-card-title {
   font-size: 15px;
   font-weight: 600;
   color: #1a1a1a;
+  line-height: 1;
 }
 
 .pf-editing-badge {
@@ -365,7 +363,17 @@ flex: 1;
   letter-spacing: 0.4px;
   margin-bottom: 6px;
 }
-.pf-field-val        { font-size: 13.5px; color: #1a1a1a; padding: 4px 0; }
+
+/* Hint text inside label */
+.pf-field-label-hint {
+  font-size: 10px;
+  font-weight: 400;
+  color: #bbb;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.pf-field-val        { font-size: 13.5px; color: #1a1a1a; padding: 2px 0; line-height: 1.5; }
 .pf-field-val--muted { color: #aaa; }
 
 .pf-input {
@@ -383,6 +391,42 @@ flex: 1;
   border-color: #e91e8c;
   box-shadow: 0 0 0 3px rgba(233,30,140,0.08);
 }
+
+/* ── Address autocomplete wrapper ── */
+.pf-address-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.pf-coords-hint {
+  font-size: 11px;
+  color: #aaa;
+  margin-top: 5px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Google Places dropdown override — keep it on top & themed */
+.pac-container {
+  border-radius: 10px !important;
+  border: 1px solid #e0ddd8 !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.10) !important;
+  font-family: 'Segoe UI', sans-serif !important;
+  font-size: 13px !important;
+  margin-top: 4px !important;
+  z-index: 9999 !important;
+}
+.pac-item {
+  padding: 8px 12px !important;
+  cursor: pointer !important;
+  border-top: 1px solid #f0eeea !important;
+  line-height: 1.5 !important;
+}
+.pac-item:first-child { border-top: none !important; }
+.pac-item:hover { background: #fce4f0 !important; }
+.pac-item-selected { background: #fce4f0 !important; }
+.pac-matched { color: #e91e8c !important; font-weight: 600 !important; }
+.pac-icon { display: none !important; }
+.pac-item-query { font-size: 13px !important; color: #1a1a1a !important; }
 
 /* Action buttons */
 .pf-action-row {
@@ -432,6 +476,8 @@ flex: 1;
   font-weight: 600;
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s;
+  flex-shrink: 0;
+  align-self: flex-start;
 }
 .pf-toggle-pw-btn:hover {
   background: #f5f4f0;
@@ -439,21 +485,20 @@ flex: 1;
 }
 
 .pf-pw-hint { font-size: 13px; color: #aaa; }
-.pf-pw-form { display: flex; flex-direction: column; gap: 14px; }
+.pf-pw-form { display: flex; flex-direction: column; gap: 16px; padding-top: 4px; }
 
 /* ════════════════════════════════
    RESPONSIVE
 ════════════════════════════════ */
 @media (max-width: 1100px) {
-  .pf-content-grid { grid-template-columns: 1fr; }
-  .pf-left-col { flex-direction: row; flex-wrap: wrap; }
-  .pf-avatar-card { flex: 1; min-width: 200px; }
-  .pf-info-card   { flex: 1; min-width: 200px; }
+  .pf-content-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+  }
 }
 
 @media (max-width: 768px) {
   .pf-sidebar { display: none; }
   .pf-main { padding: 20px 16px; }
   .pf-form-grid { grid-template-columns: 1fr; }
-  .pf-left-col { flex-direction: column; }
 }

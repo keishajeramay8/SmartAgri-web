@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import { NavLink, useNavigate } from "react-router-dom";
 import { auth, db } from "../firebase";
 import { signOut } from "firebase/auth";
@@ -112,11 +113,7 @@ const TREND_META = {
   stable:  { icon: "→", label: "Stable",  color: "#4caf50" },
 };
 
-// ── Weather icon helper ───────────────────────────────────────────────────────
-// Returns a JSX-friendly icon URL or a custom sun SVG for clear/sunny conditions
 function getWeatherIconUrl(iconCode) {
-  // OpenWeatherMap clear sky codes: "01d" (clear day), "01n" (clear night)
-  // We return null for these so the component can render a custom sun icon
   if (!iconCode) return null;
   return `https://openweathermap.org/img/wn/${iconCode}@4x.png`;
 }
@@ -125,7 +122,7 @@ function isClearSky(iconCode) {
   return iconCode === "01d" || iconCode === "01n";
 }
 
-// Custom animated SVG sun for clear/sunny weather
+// Fixed SunIcon — matches the same 110px size as the weather icon images
 function SunIcon() {
   return (
     <svg
@@ -134,7 +131,6 @@ function SunIcon() {
       className="db-weather-sun-icon"
       aria-label="Clear sky / Sunny"
     >
-      {/* Rays */}
       {[0, 45, 90, 135, 180, 225, 270, 315].map((angle, i) => (
         <line
           key={i}
@@ -147,12 +143,22 @@ function SunIcon() {
           opacity="0.85"
         />
       ))}
-      {/* Core circle */}
       <circle cx="50" cy="50" r="20" fill="#FFD600" />
       <circle cx="50" cy="50" r="16" fill="#FFEB3B" />
     </svg>
   );
 }
+
+// ── Popular cities for autocomplete suggestions ──────────────────
+const POPULAR_CITIES = [
+  "Manila", "Cebu City", "Davao", "Quezon City", "Makati",
+  "Iloilo", "Cagayan de Oro", "Zamboanga", "Bacolod", "General Santos",
+  "Tokyo", "Seoul", "Beijing", "Shanghai", "Bangkok",
+  "Singapore", "Kuala Lumpur", "Jakarta", "Ho Chi Minh City", "Hanoi",
+  "New York", "Los Angeles", "Chicago", "London", "Paris",
+  "Dubai", "Sydney", "Melbourne", "Toronto", "Mumbai",
+  "Delhi", "Osaka", "Hong Kong", "Taipei", "Kathmandu",
+];
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -163,7 +169,29 @@ export default function DashboardPage() {
 
   const [userName, setUserName]       = useState({ first: "", last: "" });
   const [photoURL, setPhotoURL]       = useState("");
-  const [location, setLocation]       = useState({ lat: null, lon: null });
+
+  const [location, setLocation]             = useState({ lat: null, lon: null });
+  const [profileAddress, setProfileAddress] = useState("");
+
+  // ── Weather search state ─────────────────────────────────────────
+  const [weatherSearchQuery, setWeatherSearchQuery] = useState("");
+  const [searchedWeather, setSearchedWeather]       = useState(null);
+  const [searchingWeather, setSearchingWeather]     = useState(false);
+  const [weatherSearchError, setWeatherSearchError] = useState("");
+  const [isShowingSearchResult, setIsShowingSearchResult] = useState(false);
+
+  // ── Autocomplete state ───────────────────────────────────────────
+  const [suggestions, setSuggestions]           = useState([]);
+  const [showSuggestions, setShowSuggestions]   = useState(false);
+  const [highlightedIdx, setHighlightedIdx]     = useState(-1);
+  const [suggestionsPos, setSuggestionsPos]     = useState({ top: 0, left: 0, width: 0 });
+  const [fetchedSuggestions, setFetchedSuggestions] = useState([]);
+  const [fetchingSuggestions, setFetchingSuggestions] = useState(false);
+
+  const searchInputRef    = useRef(null);
+  const suggestionsRef    = useRef(null);
+  const fetchDebounceRef  = useRef(null);
+  const searchWrapRef     = useRef(null);
 
   const [farmGroups, setFarmGroups]   = useState([]);
   const [selectedFarmGroup, setSelectedFarmGroup] = useState("");
@@ -186,7 +214,7 @@ export default function DashboardPage() {
     navigate("/login");
   };
 
-  // ── FETCH USER + FARM GROUPS ──────────────────────────────────────────────
+  // ── Load user profile ───────────────────────────────────────────
   useEffect(() => {
     const fetchData = async () => {
       const user = auth.currentUser;
@@ -197,7 +225,10 @@ export default function DashboardPage() {
           const data = userSnap.data();
           setUserName({ first: data.firstName || "", last: data.lastName || "" });
           setPhotoURL(data.photoURL || "");
-          setLocation({ lat: data.lat || null, lon: data.lon || null });
+          const lat = data.lat ?? null;
+          const lon = data.lon ?? null;
+          setLocation({ lat, lon });
+          setProfileAddress(data.address || "");
           setSelectedFarmGroup(data.selectedFarmGroupId || "");
         }
         const farmQuery = query(
@@ -213,7 +244,29 @@ export default function DashboardPage() {
     fetchData();
   }, []);
 
-  // ── REALTIME UNREAD NOTIFICATIONS ────────────────────────────────────────
+  // ── Realtime profile listener ───────────────────────────────────
+  useEffect(() => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const unsub = onSnapshot(doc(db, "users", user.uid), (snap) => {
+      if (!snap.exists()) return;
+      const data = snap.data();
+      const lat  = data.lat ?? null;
+      const lon  = data.lon ?? null;
+
+      setLocation((prev) => {
+        if (prev.lat !== lat || prev.lon !== lon) return { lat, lon };
+        return prev;
+      });
+      setProfileAddress(data.address || "");
+      setUserName({ first: data.firstName || "", last: data.lastName || "" });
+      setPhotoURL(data.photoURL || "");
+    });
+
+    return () => unsub();
+  }, []);
+
   useEffect(() => {
     const user = auth.currentUser;
     if (!user) return;
@@ -227,7 +280,6 @@ export default function DashboardPage() {
     return () => unsub();
   }, []);
 
-  // ── REALTIME PENDING FARMER REQUESTS (unseen only) ───────────────────────
   useEffect(() => {
     const user = auth.currentUser;
     if (!user) return;
@@ -263,7 +315,6 @@ export default function DashboardPage() {
     return () => unsubscribers.forEach((fn) => fn());
   }, []);
 
-  // ── REALTIME DEVICE + IRRIGATION LISTENERS ───────────────────────────────
   useEffect(() => {
     unsubscribersRef.current.forEach((fn) => fn());
     unsubscribersRef.current = [];
@@ -385,31 +436,231 @@ export default function DashboardPage() {
     };
   }, [selectedFarmGroup]);
 
-  // ── WEATHER ───────────────────────────────────────────────────────────────
+  // ── Fetch weather by lat/lon (profile location) ─────────────────
   useEffect(() => {
     const fetchWeather = async () => {
-      if (!location.lat || !location.lon) return;
+      if (!location.lat || !location.lon) {
+        setLoadingWeather(false);
+        return;
+      }
+      if (isShowingSearchResult) return;
+      setLoadingWeather(true);
       try {
         const res = await axios.get(
           "https://api.openweathermap.org/data/2.5/weather",
-          { params: { lat: location.lat, lon: location.lon, appid: WEATHER_KEY, units: "metric" } }
+          {
+            params: {
+              lat:   location.lat,
+              lon:   location.lon,
+              appid: WEATHER_KEY,
+              units: "metric",
+            },
+          }
         );
         setWeather(res.data);
       } catch (err) {
-        console.error(err);
+        console.error("Weather fetch error:", err);
+        setWeather(null);
       } finally {
         setLoadingWeather(false);
       }
     };
     fetchWeather();
-  }, [location]);
+  }, [location.lat, location.lon, isShowingSearchResult]);
 
-  // ── CLOCK ─────────────────────────────────────────────────────────────────
+  // ── Autocomplete: filter popular cities + fetch from API ─────────
+  const computeSuggestions = useCallback((value) => {
+    if (!value.trim()) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    const lower = value.toLowerCase();
+
+    // Local matches first
+    const localMatches = POPULAR_CITIES.filter((c) =>
+      c.toLowerCase().startsWith(lower)
+    ).slice(0, 5);
+
+    // Merge with API fetched suggestions
+    const allSuggestions = [
+      ...new Set([...localMatches, ...fetchedSuggestions]),
+    ].slice(0, 7);
+
+    setSuggestions(allSuggestions);
+    if (allSuggestions.length > 0) updateSuggestionsPos();
+    setShowSuggestions(allSuggestions.length > 0);
+    setHighlightedIdx(-1);
+  }, [fetchedSuggestions]);
+
+  // ── Fetch city suggestions from OpenWeatherMap Geo API ───────────
+  const fetchCitySuggestions = useCallback(async (value) => {
+    if (!value || value.trim().length < 2) {
+      setFetchedSuggestions([]);
+      return;
+    }
+    setFetchingSuggestions(true);
+    try {
+      const res = await axios.get(
+        "https://api.openweathermap.org/geo/1.0/direct",
+        {
+          params: {
+            q:     value.trim(),
+            limit: 5,
+            appid: WEATHER_KEY,
+          },
+        }
+      );
+      const cities = res.data.map((item) => {
+        const parts = [item.name];
+        if (item.state) parts.push(item.state);
+        if (item.country) parts.push(item.country);
+        return parts.join(", ");
+      });
+      setFetchedSuggestions(cities);
+    } catch {
+      setFetchedSuggestions([]);
+    } finally {
+      setFetchingSuggestions(false);
+    }
+  }, []);
+
+  // Update suggestions whenever fetchedSuggestions or query changes
   useEffect(() => {
-    if (!weather) return;
+    computeSuggestions(weatherSearchQuery);
+  }, [weatherSearchQuery, fetchedSuggestions, computeSuggestions]);
+
+  const handleSearchInputChange = (e) => {
+    const value = e.target.value;
+    setWeatherSearchQuery(value);
+    if (weatherSearchError) setWeatherSearchError("");
+
+    // Debounce API fetch
+    clearTimeout(fetchDebounceRef.current);
+    if (value.trim().length >= 2) {
+      fetchDebounceRef.current = setTimeout(() => {
+        fetchCitySuggestions(value);
+      }, 300);
+    } else {
+      setFetchedSuggestions([]);
+    }
+  };
+
+  const updateSuggestionsPos = useCallback(() => {
+    if (!searchWrapRef.current) return;
+    const rect = searchWrapRef.current.getBoundingClientRect();
+    setSuggestionsPos({
+      top:   rect.bottom + window.scrollY + 4,
+      left:  rect.left   + window.scrollX,
+      width: rect.width,
+    });
+  }, []);
+
+  const handleSuggestionSelect = (city) => {
+    // Extract just the city name part (before any comma)
+    const cityName = city.split(",")[0].trim();
+    setWeatherSearchQuery(city);
+    setSuggestions([]);
+    setShowSuggestions(false);
+    setHighlightedIdx(-1);
+    // Auto-search when selecting a suggestion
+    triggerWeatherSearch(cityName);
+  };
+
+  const triggerWeatherSearch = async (cityQuery) => {
+    const q = (cityQuery || weatherSearchQuery).trim();
+    if (!q) return;
+
+    setSearchingWeather(true);
+    setWeatherSearchError("");
+
+    try {
+      const res = await axios.get(
+        "https://api.openweathermap.org/data/2.5/weather",
+        {
+          params: {
+            q:     q,
+            appid: WEATHER_KEY,
+            units: "metric",
+          },
+        }
+      );
+      setSearchedWeather(res.data);
+      setIsShowingSearchResult(true);
+    } catch (err) {
+      if (err.response?.status === 404) {
+        setWeatherSearchError(`City "${q}" not found. Try another name.`);
+      } else {
+        setWeatherSearchError("Search failed. Please try again.");
+      }
+      setSearchedWeather(null);
+    } finally {
+      setSearchingWeather(false);
+    }
+  };
+
+  const handleWeatherSearch = (e) => {
+    e.preventDefault();
+    setShowSuggestions(false);
+    triggerWeatherSearch();
+  };
+
+  // Keyboard navigation for suggestions
+  const handleSearchKeyDown = (e) => {
+    if (!showSuggestions || suggestions.length === 0) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHighlightedIdx((prev) => Math.min(prev + 1, suggestions.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlightedIdx((prev) => Math.max(prev - 1, -1));
+    } else if (e.key === "Enter" && highlightedIdx >= 0) {
+      e.preventDefault();
+      handleSuggestionSelect(suggestions[highlightedIdx]);
+    } else if (e.key === "Escape") {
+      setShowSuggestions(false);
+      setHighlightedIdx(-1);
+    }
+  };
+
+  // Close suggestions on outside click
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (
+        suggestionsRef.current &&
+        !suggestionsRef.current.contains(e.target) &&
+        searchInputRef.current &&
+        !searchInputRef.current.contains(e.target)
+      ) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleClearSearch = () => {
+    setWeatherSearchQuery("");
+    setSearchedWeather(null);
+    setIsShowingSearchResult(false);
+    setWeatherSearchError("");
+    setSuggestions([]);
+    setShowSuggestions(false);
+    setFetchedSuggestions([]);
+    setHighlightedIdx(-1);
+  };
+
+  // ── Display weather: searched city takes priority ────────────────
+  const displayWeather = isShowingSearchResult ? searchedWeather : weather;
+
+  // ── Live clock ───────────────────────────────────────────────────
+  useEffect(() => {
+    if (!displayWeather) return;
     const interval = setInterval(() => {
       const nowUTC    = new Date().getTime() + new Date().getTimezoneOffset() * 60000;
-      const localTime = new Date(nowUTC + weather.timezone * 1000);
+      const localTime = new Date(nowUTC + displayWeather.timezone * 1000);
       setCurrentDate(
         localTime.toLocaleDateString(undefined, {
           weekday: "long", year: "numeric", month: "long", day: "numeric",
@@ -422,9 +673,8 @@ export default function DashboardPage() {
       );
     }, 1000);
     return () => clearInterval(interval);
-  }, [weather]);
+  }, [displayWeather]);
 
-  // ── SELECT FARM GROUP ─────────────────────────────────────────────────────
   const handleSelectFarmGroup = async (farmId, farmName) => {
     setSelectedFarmGroup(farmId);
     setFarmGroupName(farmName);
@@ -433,8 +683,7 @@ export default function DashboardPage() {
     await updateDoc(doc(db, "users", user.uid), { selectedFarmGroupId: farmId });
   };
 
-  // ── MARK NOTIFICATIONS AS READ when navigating to /notifications ──────────
-  const handleNotificationsNav = async (e) => {
+  const handleNotificationsNav = async () => {
     const user = auth.currentUser;
     if (!user) return;
     try {
@@ -454,8 +703,7 @@ export default function DashboardPage() {
     }
   };
 
-  // ── MARK JOIN REQUESTS AS SEEN when navigating to /register-farmer ────────
-  const handleRegisterFarmerNav = async (e) => {
+  const handleRegisterFarmerNav = async () => {
     const user = auth.currentUser;
     if (!user) return;
     try {
@@ -488,7 +736,6 @@ export default function DashboardPage() {
   const getInitials = (first = "", last = "") =>
     `${first.charAt(0)}${last.charAt(0)}`.toUpperCase();
 
-  // ── FILTER SESSIONS BY TIME WINDOW ───────────────────────────────────────
   const getFilteredSessions = (sessions, type) => {
     const now = new Date();
     return sessions.filter((s) => {
@@ -499,7 +746,6 @@ export default function DashboardPage() {
     });
   };
 
-  // ── BUILD BAR CHART DATA ──────────────────────────────────────────────────
   const getChartData = () => {
     if (!irrigationSessions.length) return { labels: [], datasets: [] };
 
@@ -538,7 +784,6 @@ export default function DashboardPage() {
     return { labels, datasets };
   };
 
-  // ── BUILD TREND SPARKLINE DATA ────────────────────────────────────────────
   const getTrendSparkline = (devId) => {
     const readings = [...(deviceReadingHistory[devId] ?? [])].reverse();
     if (readings.length < 2) return null;
@@ -565,7 +810,6 @@ export default function DashboardPage() {
     };
   };
 
-  // ── AGGREGATES (respect active filter for totals) ─────────────────────────
   const filteredSessionsForTotals = getFilteredSessions(irrigationSessions, filterType);
   const totalWaterML = filteredSessionsForTotals.reduce((s, i) => s + i.amountML, 0);
 
@@ -602,19 +846,19 @@ export default function DashboardPage() {
   const hasChart  = chartData.datasets.length > 0 && chartData.labels.length > 0;
 
   const deviceTrends = devices.map((d) => {
-    const history  = deviceReadingHistory[d.deviceId] ?? [];
-    const trend    = computeTrend(history);
+    const history   = deviceReadingHistory[d.deviceId] ?? [];
+    const trend     = computeTrend(history);
     const sparkline = getTrendSparkline(d.deviceId);
-    const latest   = history[0];
-    const moisture = parseFloat((latest?.soilMoisture ?? 0).toFixed(1));
+    const latest    = history[0];
+    const moisture  = parseFloat((latest?.soilMoisture ?? 0).toFixed(1));
     return { ...d, trend, sparkline, moisture, history };
   });
 
   const filterLabel = filterType === "daily" ? "today" : filterType === "weekly" ? "this week" : "this month";
 
-  // Weather icon code
-  const weatherIconCode = weather?.weather?.[0]?.icon ?? null;
+  const weatherIconCode = displayWeather?.weather?.[0]?.icon ?? null;
   const clearSky = isClearSky(weatherIconCode);
+  const hasLocation = location.lat && location.lon;
 
   return (
     <div className="db-dashboard">
@@ -640,11 +884,7 @@ export default function DashboardPage() {
         </div>
         <nav className="db-nav">
           <NavLink to="/dashboard" className={navClass} end>Dashboard</NavLink>
-          <NavLink
-            to="/register-farmer"
-            className={navClass}
-            onClick={handleRegisterFarmerNav}
-          >
+          <NavLink to="/register-farmer" className={navClass} onClick={handleRegisterFarmerNav}>
             <span className="db-notif-link">
               Register Farmer
               {pendingCount > 0 && (
@@ -655,11 +895,7 @@ export default function DashboardPage() {
             </span>
           </NavLink>
           <NavLink to="/farmers" className={navClass}>Farmers</NavLink>
-          <NavLink
-            to="/notifications"
-            className={navClass}
-            onClick={handleNotificationsNav}
-          >
+          <NavLink to="/notifications" className={navClass} onClick={handleNotificationsNav}>
             <span className="db-notif-link">
               Notification
               {unreadCount > 0 && (
@@ -725,291 +961,405 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* CONTENT GRID */}
-        <div className="db-content-grid">
+        {/* ── ROW 1: Weather + Soil Moisture Devices ── */}
+        <div className="db-content-grid" style={{ marginBottom: "18px" }}>
 
-          <div className="db-left-col">
+          {/* WEATHER CARD */}
+          <div className="db-card db-weather-card">
+            <div className="db-card-header">
+              <h2 className="db-card-title">Current Weather</h2>
+              <div className="db-weather-header-right">
 
-            {/* WEATHER CARD */}
-            <div className="db-card">
-              <div className="db-card-header">
-                <h2 className="db-card-title">Current Weather</h2>
-              </div>
-              {loadingWeather ? (
-                <p className="db-placeholder">Loading weather...</p>
-              ) : weather ? (
-                <div className="db-weather-body">
-                  <div className="db-weather-info">
-                    <p className="db-weather-city">{weather.name}</p>
-                    <p className="db-weather-temp">{weather.main.temp}°C</p>
-                    <p className="db-weather-desc">{weather.weather[0].description}</p>
-                    <div className="db-weather-meta">
-                      <span>💧 {weather.main.humidity}%</span>
-                      <span>💨 {weather.wind.speed} m/s</span>
-                      <span>🌡 Feels {weather.main.feels_like}°C</span>
+                {/* ── Weather search with autocomplete ── */}
+                {/* Wrapper is position:relative so floating labels don't affect card height */}
+                <div className="db-weather-search-anchor" ref={searchWrapRef}>
+                  <form className="db-weather-search-form" onSubmit={handleWeatherSearch}>
+                    <div className="db-weather-search-wrap">
+                      <span className="db-weather-search-icon">🔍</span>
+                      <input
+                        ref={searchInputRef}
+                        className="db-weather-search-input"
+                        type="text"
+                        value={weatherSearchQuery}
+                        onChange={handleSearchInputChange}
+                        onKeyDown={handleSearchKeyDown}
+                        onFocus={() => {
+                          if (suggestions.length > 0) {
+                            updateSuggestionsPos();
+                            setShowSuggestions(true);
+                          }
+                        }}
+                        placeholder="Search city…"
+                        autoComplete="off"
+                        spellCheck={false}
+                      />
+                      {fetchingSuggestions && (
+                        <span className="db-weather-search-spinner">⟳</span>
+                      )}
+                      {weatherSearchQuery && (
+                        <button
+                          type="button"
+                          className="db-weather-search-clear"
+                          onClick={() => {
+                            setWeatherSearchQuery("");
+                            setWeatherSearchError("");
+                            setSuggestions([]);
+                            setShowSuggestions(false);
+                            setFetchedSuggestions([]);
+                            if (isShowingSearchResult) handleClearSearch();
+                            searchInputRef.current?.focus();
+                          }}
+                        >
+                          ✕
+                        </button>
+                      )}
+                      <button
+                        type="submit"
+                        className="db-weather-search-btn"
+                        disabled={searchingWeather || !weatherSearchQuery.trim()}
+                      >
+                        {searchingWeather ? "…" : "Go"}
+                      </button>
                     </div>
-                    <p className="db-weather-date">{currentDate}</p>
-                    <p className="db-weather-time">{currentTime}</p>
-                  </div>
-                  {clearSky ? (
-                    <SunIcon />
-                  ) : (
-                    <img
-                      src={getWeatherIconUrl(weatherIconCode)}
-                      alt={weather.weather[0].description}
-                      className="db-weather-icon"
-                    />
+                  </form>
+
+                  {/* Floating labels — position:absolute so they don't affect card height */}
+                  {(weatherSearchError || isShowingSearchResult) && createPortal(
+                    <div
+                      className="db-weather-search-floating"
+                      style={{
+                        position: "fixed",
+                        top:      suggestionsPos.top,
+                        left:     suggestionsPos.left,
+                        width:    suggestionsPos.width || "auto",
+                        minWidth: 160,
+                      }}
+                    >
+                      {weatherSearchError && (
+                        <p className="db-weather-search-error">{weatherSearchError}</p>
+                      )}
+                      {isShowingSearchResult && (
+                        <button type="button" className="db-weather-reset-btn" onClick={handleClearSearch}>
+                          ← My Location
+                        </button>
+                      )}
+                    </div>,
+                    document.body
+                  )}
+
+                  {/* Suggestions portal */}
+                  {showSuggestions && suggestions.length > 0 && createPortal(
+                    <ul
+                      className="db-weather-suggestions"
+                      ref={suggestionsRef}
+                      style={{
+                        position: "fixed",
+                        top:      suggestionsPos.top,
+                        left:     suggestionsPos.left,
+                        width:    suggestionsPos.width || "auto",
+                        minWidth: 200,
+                      }}
+                    >
+                      {suggestions.map((city, idx) => (
+                        <li
+                          key={city}
+                          className={`db-weather-suggestion-item${idx === highlightedIdx ? " highlighted" : ""}`}
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            handleSuggestionSelect(city);
+                          }}
+                          onMouseEnter={() => setHighlightedIdx(idx)}
+                        >
+                          <span className="db-suggestion-pin">📍</span>
+                          <span className="db-suggestion-text">{city}</span>
+                        </li>
+                      ))}
+                    </ul>,
+                    document.body
                   )}
                 </div>
-              ) : (
-                <p className="db-placeholder">No weather data available.</p>
-              )}
+
+              </div>
             </div>
 
-            {/* WATER ANALYTICS CARD */}
-            <div className="db-card">
-              <div className="db-card-header">
-                <h2 className="db-card-title">Water Usage Analytics</h2>
-                <span className="db-water-total">{fmtWater(totalWaterML)}</span>
+            {/* ── Weather Display ── */}
+            {loadingWeather ? (
+              <p className="db-placeholder">Loading weather...</p>
+            ) : !hasLocation && !isShowingSearchResult ? (
+              <div className="db-chart-empty">
+                <span>📍</span>
+                <p>No location set</p>
+                <p className="db-chart-empty-sub">
+                  Go to your <NavLink to="/profile" style={{ color: "#e91e8c" }}>Profile</NavLink> and set your address to see local weather, or search a city above.
+                </p>
               </div>
-
-              <div className="db-datetime-row">
-                <div className="db-datetime-block">
-                  <span className="db-dt-label">Date</span>
-                  <span className="db-dt-value">{currentDate || "—"}</span>
-                </div>
-                <div className="db-dt-divider" />
-                <div className="db-datetime-block">
-                  <span className="db-dt-label">Time</span>
-                  <span className="db-dt-value db-dt-mono">{currentTime || "—"}</span>
-                </div>
-                <div className="db-dt-divider" />
-                <div className="db-datetime-block">
-                  <span className="db-dt-label">Sessions</span>
-                  <span className="db-dt-value">{filteredSessionsForTotals.length}</span>
-                </div>
-              </div>
-
-              <div className="db-filter-btns">
-                {["daily", "weekly", "monthly"].map((f) => (
-                  <button
-                    key={f}
-                    className={`db-filter-btn${filterType === f ? " active" : ""}`}
-                    onClick={() => setFilterType(f)}
-                  >
-                    {f.charAt(0).toUpperCase() + f.slice(1)}
-                  </button>
-                ))}
-              </div>
-
-              <div className="db-chart-wrap">
-                {loadingDevices ? (
-                  <div className="db-chart-empty">
-                    <span>⏳</span>
-                    <p>Loading irrigation data...</p>
+            ) : displayWeather ? (
+              <div className="db-weather-body">
+                <div className="db-weather-info">
+                  <p className="db-weather-city">{displayWeather.name}</p>
+                  <p className="db-weather-temp">{displayWeather.main.temp}°C</p>
+                  <p className="db-weather-desc">{displayWeather.weather[0].description}</p>
+                  <div className="db-weather-meta">
+                    <span>💧 {displayWeather.main.humidity}%</span>
+                    <span>💨 {displayWeather.wind.speed} m/s</span>
+                    <span>🌡 Feels {displayWeather.main.feels_like}°C</span>
                   </div>
-                ) : hasChart ? (
-                  <Bar
-                    data={chartData}
-                    options={{
-                      responsive:          true,
-                      maintainAspectRatio: false,
-                      plugins: {
-                        legend:  { position: "top" },
-                        tooltip: {
-                          callbacks: {
-                            label: (ctx) => {
-                              const ml = ctx.parsed.y * 1000;
-                              return ` ${ctx.dataset.label}: ${fmtWater(ml)}`;
-                            },
-                          },
-                        },
-                      },
-                      scales: {
-                        x: {
-                          grid:  { color: "rgba(0,0,0,0.04)" },
-                          ticks: { font: { size: 11 }, maxRotation: 45 },
-                        },
-                        y: {
-                          grid:  { color: "rgba(0,0,0,0.04)" },
-                          ticks: {
-                            font:     { size: 11 },
-                            callback: (v) => fmtWater(v * 1000),
-                          },
-                          title: {
-                            display: true,
-                            text:    "Water Used",
-                            font:    { size: 11 },
-                          },
-                        },
-                      },
-                    }}
-                  />
+                  <p className="db-weather-date">{currentDate}</p>
+                  <p className="db-weather-time">{currentTime}</p>
+                </div>
+                {clearSky ? (
+                  <SunIcon />
                 ) : (
-                  <div className="db-chart-empty">
-                    <span>📊</span>
-                    <p>No irrigation data for {filterLabel}</p>
-                    <p className="db-chart-empty-sub">
-                      Water usage will appear here after a completed irrigation session{" "}
-                      {filterLabel === "today" ? "today" : `this ${filterType === "weekly" ? "week" : "month"}`}.
-                    </p>
-                  </div>
+                  <img
+                    src={getWeatherIconUrl(weatherIconCode)}
+                    alt={displayWeather.weather[0].description}
+                    className="db-weather-icon"
+                  />
                 )}
               </div>
-
-              {perDeviceTotals.length > 0 && (
-                <div className="db-device-stat-row">
-                  {perDeviceTotals.map((device) => (
-                    <div className="db-device-stat" key={device.id}>
-                      <p className="db-device-stat-label">{device.deviceId}</p>
-                      <p className="db-device-stat-val">{fmtWater(device.totalML)}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
+            ) : (
+              <p className="db-placeholder">No weather data available.</p>
+            )}
           </div>
 
-          <div className="db-right-col">
-
-            {/* SOIL MOISTURE DEVICES */}
-            <div className="db-card db-soil-card">
-              <div className="db-card-header">
-                <h2 className="db-card-title">Soil Moisture Devices</h2>
-                <span className="db-device-count-badge">
-                  {devices.length} device{devices.length !== 1 ? "s" : ""}
-                </span>
-              </div>
-
-              {devices.length === 0 ? (
-                <div className="db-soil-empty">
-                  <span>🌱</span>
-                  <p>No devices found for this farm group.</p>
-                </div>
-              ) : (
-                <div className="db-device-grid">
-                  {devices.map((device) => {
-                    const moisture      = parseFloat(
-                      (device.latestReading?.soilMoisture ?? 0).toFixed(1)
-                    );
-                    const status        = device.latestReading?.soilStatus || "No Data";
-                    const moistureClass = getMoistureClass(status);
-                    const color         = getMoistureColor(status);
-                    const devStatus     = getDeviceStatus(device.latestReading);
-                    const trend         = computeTrend(deviceReadingHistory[device.deviceId] ?? []);
-                    const tm            = TREND_META[trend];
-
-                    return (
-                      <div className="db-device-card" key={device.id}>
-                        <div className="db-device-header">
-                          <p className="db-device-id">{device.deviceId}</p>
-                          <span className={`db-online-badge db-online-badge--${devStatus}`}>
-                            {devStatus === "active" ? "● Active" : "○ Offline"}
-                          </span>
-                        </div>
-
-                        <div className="db-progress-wrap">
-                          <CircularProgressbar
-                            value={moisture}
-                            maxValue={100}
-                            text={`${moisture}%`}
-                            styles={buildStyles({
-                              pathColor:  color,
-                              textColor:  "#1a1a1a",
-                              trailColor: "#f0eeea",
-                              textSize:   "18px",
-                            })}
-                          />
-                        </div>
-
-                        <div className="db-device-footer">
-                          <span className={`db-soil-status ${moistureClass}`}>{status}</span>
-                          <span className="db-growth-badge">{device.growthstage}</span>
-                        </div>
-
-                        {trend !== "stable" && (
-                          <div className="db-device-trend-row">
-                            <span
-                              className="db-trend-badge db-trend-badge--sm"
-                              style={{ color: tm.color, borderColor: tm.color + "44", background: tm.color + "11" }}
-                            >
-                              {tm.icon} {tm.label}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+          {/* SOIL MOISTURE DEVICES */}
+          <div className="db-card db-soil-card">
+            <div className="db-card-header">
+              <h2 className="db-card-title">Soil Moisture Devices</h2>
+              <span className="db-device-count-badge">
+                {devices.length} device{devices.length !== 1 ? "s" : ""}
+              </span>
             </div>
 
-            {/* MOISTURE TRENDS */}
-            <div className="db-card db-trends-card">
-              <div className="db-card-header">
-                <h2 className="db-card-title">Moisture Trends</h2>
-                <span className="db-device-count-badge">Last 10 readings</span>
+            {devices.length === 0 ? (
+              <div className="db-soil-empty">
+                <span>🌱</span>
+                <p>No devices found for this farm group.</p>
               </div>
+            ) : (
+              <div className="db-device-grid">
+                {devices.map((device) => {
+                  const moisture      = parseFloat(
+                    (device.latestReading?.soilMoisture ?? 0).toFixed(1)
+                  );
+                  const status        = device.latestReading?.soilStatus || "No Data";
+                  const moistureClass = getMoistureClass(status);
+                  const color         = getMoistureColor(status);
+                  const devStatus     = getDeviceStatus(device.latestReading);
+                  const trend         = computeTrend(deviceReadingHistory[device.deviceId] ?? []);
+                  const tm            = TREND_META[trend];
 
-              {deviceTrends.length === 0 ? (
-                <div className="db-soil-empty">
-                  <span>📈</span>
-                  <p>No trend data yet.</p>
-                </div>
-              ) : (
-                <div className="db-trends-list">
-                  {deviceTrends.map((d) => {
-                    const tm = TREND_META[d.trend];
-                    return (
-                      <div className="db-trend-card" key={d.id}>
-                        <div className="db-trend-header">
-                          <span className="db-trend-device-id">{d.deviceId}</span>
+                  return (
+                    <div className="db-device-card" key={device.id}>
+                      <div className="db-device-header">
+                        <p className="db-device-id">{device.deviceId}</p>
+                        <span className={`db-online-badge db-online-badge--${devStatus}`}>
+                          {devStatus === "active" ? "● Active" : "○ Offline"}
+                        </span>
+                      </div>
+                      <div className="db-progress-wrap">
+                        <CircularProgressbar
+                          value={moisture}
+                          maxValue={100}
+                          text={`${moisture}%`}
+                          styles={buildStyles({
+                            pathColor:  color,
+                            textColor:  "#1a1a1a",
+                            trailColor: "#f0eeea",
+                            textSize:   "18px",
+                          })}
+                        />
+                      </div>
+                      <div className="db-device-footer">
+                        <span className={`db-soil-status ${moistureClass}`}>{status}</span>
+                        <span className="db-growth-badge">{device.growthstage}</span>
+                      </div>
+                      {trend !== "stable" && (
+                        <div className="db-device-trend-row">
                           <span
-                            className="db-trend-badge"
+                            className="db-trend-badge db-trend-badge--sm"
                             style={{ color: tm.color, borderColor: tm.color + "44", background: tm.color + "11" }}
                           >
                             {tm.icon} {tm.label}
                           </span>
                         </div>
-                        <div className="db-trend-moisture">
-                          <span className="db-trend-value">{d.moisture}%</span>
-                          <span className="db-trend-label">moisture</span>
-                        </div>
-                        <div className="db-trend-sparkline">
-                          {d.sparkline ? (
-                            <Line
-                              data={d.sparkline}
-                              options={{
-                                responsive:          true,
-                                maintainAspectRatio: false,
-                                animation:           false,
-                                plugins: { legend: { display: false }, tooltip: { enabled: false } },
-                                scales: {
-                                  x: { display: false },
-                                  y: {
-                                    display: true,
-                                    min: 0, max: 100,
-                                    grid: { color: "rgba(0,0,0,0.04)" },
-                                    ticks: { font: { size: 9 }, callback: (v) => `${v}%` },
-                                  },
-                                },
-                              }}
-                            />
-                          ) : (
-                            <div className="db-trend-no-data">Not enough data</div>
-                          )}
-                        </div>
-                        <p className="db-trend-readings-count">
-                          {d.history.length} reading{d.history.length !== 1 ? "s" : ""}
-                        </p>
-                      </div>
-                    );
-                  })}
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+        </div>
+
+        {/* ── ROW 2: Water Analytics + Moisture Trends ── */}
+        <div className="db-content-grid">
+
+          {/* WATER USAGE ANALYTICS */}
+          <div className="db-card">
+            <div className="db-card-header">
+              <h2 className="db-card-title">Water Usage Analytics</h2>
+              <span className="db-water-total">{fmtWater(totalWaterML)}</span>
+            </div>
+
+            <div className="db-datetime-row">
+              <div className="db-datetime-block">
+                <span className="db-dt-label">Date</span>
+                <span className="db-dt-value">{currentDate || "—"}</span>
+              </div>
+              <div className="db-datetime-block">
+                <span className="db-dt-label">Time</span>
+                <span className="db-dt-value db-dt-mono">{currentTime || "—"}</span>
+              </div>
+              <div className="db-datetime-block">
+                <span className="db-dt-label">Sessions</span>
+                <span className="db-dt-value">{filteredSessionsForTotals.length}</span>
+              </div>
+            </div>
+
+            <div className="db-filter-btns">
+              {["daily", "weekly", "monthly"].map((f) => (
+                <button
+                  key={f}
+                  className={`db-filter-btn${filterType === f ? " active" : ""}`}
+                  onClick={() => setFilterType(f)}
+                >
+                  {f.charAt(0).toUpperCase() + f.slice(1)}
+                </button>
+              ))}
+            </div>
+
+            <div className="db-chart-wrap">
+              {loadingDevices ? (
+                <div className="db-chart-empty">
+                  <span>⏳</span>
+                  <p>Loading irrigation data...</p>
+                </div>
+              ) : hasChart ? (
+                <Bar
+                  data={chartData}
+                  options={{
+                    responsive:          true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend:  { position: "top" },
+                      tooltip: {
+                        callbacks: {
+                          label: (ctx) => {
+                            const ml = ctx.parsed.y * 1000;
+                            return ` ${ctx.dataset.label}: ${fmtWater(ml)}`;
+                          },
+                        },
+                      },
+                    },
+                    scales: {
+                      x: {
+                        grid:  { color: "rgba(0,0,0,0.04)" },
+                        ticks: { font: { size: 11 }, maxRotation: 45 },
+                      },
+                      y: {
+                        grid:  { color: "rgba(0,0,0,0.04)" },
+                        ticks: {
+                          font:     { size: 11 },
+                          callback: (v) => fmtWater(v * 1000),
+                        },
+                        title: {
+                          display: true,
+                          text:    "Water Used",
+                          font:    { size: 11 },
+                        },
+                      },
+                    },
+                  }}
+                />
+              ) : (
+                <div className="db-chart-empty">
+                  <span>📊</span>
+                  <p>No irrigation data for {filterLabel}</p>
+                  <p className="db-chart-empty-sub">
+                    Water usage will appear here after a completed irrigation session{" "}
+                    {filterLabel === "today" ? "today" : `this ${filterType === "weekly" ? "week" : "month"}`}.
+                  </p>
                 </div>
               )}
             </div>
 
+            {perDeviceTotals.length > 0 && (
+              <div className="db-device-stat-row">
+                {perDeviceTotals.map((device) => (
+                  <div className="db-device-stat" key={device.id}>
+                    <p className="db-device-stat-label">{device.deviceId}</p>
+                    <p className="db-device-stat-val">{fmtWater(device.totalML)}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* MOISTURE TRENDS */}
+          <div className="db-card db-trends-card">
+            <div className="db-card-header">
+              <h2 className="db-card-title">Moisture Trends</h2>
+              <span className="db-device-count-badge">Last 10 readings</span>
+            </div>
+
+            {deviceTrends.length === 0 ? (
+              <div className="db-soil-empty">
+                <span>📈</span>
+                <p>No trend data yet.</p>
+              </div>
+            ) : (
+              <div className="db-trends-list">
+                {deviceTrends.map((d) => {
+                  const tm = TREND_META[d.trend];
+                  return (
+                    <div className="db-trend-card" key={d.id}>
+                      <div className="db-trend-header">
+                        <span className="db-trend-device-id">{d.deviceId}</span>
+                        <span
+                          className="db-trend-badge"
+                          style={{ color: tm.color, borderColor: tm.color + "44", background: tm.color + "11" }}
+                        >
+                          {tm.icon} {tm.label}
+                        </span>
+                      </div>
+                      <div className="db-trend-moisture">
+                        <span className="db-trend-value">{d.moisture}%</span>
+                        <span className="db-trend-label">moisture</span>
+                      </div>
+                      <div className="db-trend-sparkline">
+                        {d.sparkline ? (
+                          <Line
+                            data={d.sparkline}
+                            options={{
+                              responsive:          true,
+                              maintainAspectRatio: false,
+                              animation:           false,
+                              plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                              scales: {
+                                x: { display: false },
+                                y: {
+                                  display: true,
+                                  min: 0, max: 100,
+                                  grid: { color: "rgba(0,0,0,0.04)" },
+                                  ticks: { font: { size: 9 }, callback: (v) => `${v}%` },
+                                },
+                              },
+                            }}
+                          />
+                        ) : (
+                          <div className="db-trend-no-data">Not enough data</div>
+                        )}
+                      </div>
+                      <p className="db-trend-readings-count">
+                        {d.history.length} reading{d.history.length !== 1 ? "s" : ""}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
         </div>
