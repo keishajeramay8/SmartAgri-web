@@ -127,7 +127,7 @@ export default function FarmerPage() {
           const membersRef = collection(db, "farmgroups", groupId, "members");
           const memberSnapshot = await getDocs(membersRef);
 
-          const farmers = await Promise.all(
+          const members = await Promise.all(
             memberSnapshot.docs.map(async (memberDoc) => {
               const farmerUid = memberDoc.id;
               const farmerSnap = await getDoc(doc(db, "users", farmerUid));
@@ -138,7 +138,7 @@ export default function FarmerPage() {
               };
             })
           );
-          farmerList = [...farmerList, ...farmers];
+          farmerList = [...farmerList, ...members];
         }
 
         setFarmGroupNames(namesMap);
@@ -150,7 +150,7 @@ export default function FarmerPage() {
     loadFarmers();
   }, []);
 
-  // ── MARK NOTIFICATIONS AS READ ────────────────────────────────────────────
+  // Mark Notifications as Read
   const handleNotificationsNav = async () => {
     const user = auth.currentUser;
     if (!user) return;
@@ -171,7 +171,7 @@ export default function FarmerPage() {
     }
   };
 
-  // ── MARK JOIN REQUESTS AS SEEN ────────────────────────────────────────────
+  // Mark Join Requests as Seen
   const handleRegisterFarmerNav = async () => {
     const user = auth.currentUser;
     if (!user) return;
@@ -316,6 +316,7 @@ export default function FarmerPage() {
           />
         </div>
 
+        {/* STATS */}
         <div className="fp-stats">
           <div className="fp-stat">
             <p className="fp-stat-label">Total Farmers</p>
@@ -331,21 +332,38 @@ export default function FarmerPage() {
           </div>
         </div>
 
-        <div className="fp-table-wrap">
-          <div className="fp-table-head">
+        {/* ── FARMERS CARD — matches RegisterFarmerPage style ── */}
+        <div className="f-table-section">
+
+          {/* Card header */}
+          <div className="f-card-header">
+            <h2 className="f-card-title">Registered Farmers</h2>
+            {filtered.length > 0 && (
+              <span className="f-pending-badge">
+                {filtered.length} farmer{filtered.length !== 1 ? "s" : ""}
+              </span>
+            )}
+          </div>
+
+          {/* Table header */}
+          <div className="f-table-header fp-cols">
             <span>Farmer</span>
             <span>Email</span>
             <span>Farm Group</span>
+            <span>Action</span>
           </div>
 
+          {/* Rows */}
           {filtered.length === 0 ? (
-            <div className="fp-empty">
-              <span className="fp-empty-icon">👨‍🌾</span>
+            <div className="f-empty">
+              <span>👨‍🌾</span>
               <p>No farmers found.</p>
             </div>
           ) : (
             filtered.map((f) => (
-              <div className="fp-row" key={f.id}>
+              <div className="f-row fp-cols" key={f.id}>
+
+                {/* Farmer cell */}
                 <div className="fp-row-farmer">
                   <div className="fp-row-avatar">
                     {getInitials(f.firstName, f.lastName)}
@@ -358,29 +376,34 @@ export default function FarmerPage() {
                   </div>
                 </div>
 
+                {/* Email */}
                 <span className="fp-row-email">{f.email || "—"}</span>
 
-                <span className="fp-row-group">
-                  <span className="fp-group-badge">
+                {/* Farm Group badge */}
+                <span>
+                  <span className="f-pending-badge" style={{ background: "#e8f5e9", color: "#2e7d32" }}>
                     {farmGroupNames[f.groupId] || "—"}
                   </span>
                 </span>
 
-                <div className="fp-row-actions">
+                {/* Remove action */}
+                <div className="f-actions">
                   <button
-                    className="fp-btn fp-btn-remove"
+                    className="remove"
                     onClick={() => openRemoveModal(f)}
+                    title="Remove"
                   >
-                    <FaTrash size={11} /> Remove
+                    <FaTrash size={11} />
                   </button>
                 </div>
+
               </div>
             ))
           )}
         </div>
       </main>
 
-      {/* ── REMOVE CONFIRM MODAL ── */}
+      {/* REMOVE CONFIRM MODAL */}
       {showRemoveModal && selectedFarmer && (
         <div className="fp-overlay">
           <div className="fp-modal fp-modal-sm">

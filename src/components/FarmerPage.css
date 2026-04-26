@@ -549,6 +549,7 @@
   .fp-main {
     padding: 20px 16px;
   }
+  
 
   .fp-stats {
     grid-template-columns: 1fr 1fr;
@@ -562,4 +563,5 @@
   .fp-search {
     width: 100%;
   }
+  
 }
