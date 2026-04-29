@@ -153,7 +153,7 @@ html, body {
 }
 
 .logo-wrapper img {
-  max-width: 360px;
+  max-width: 380px;
   width: 100%;
   height: auto;
   display: block;
@@ -176,9 +176,9 @@ html, body {
   background: var(--white);
   border: 1px solid var(--border);
   border-radius: 20px;
-  padding: 36px 36px 32px;
+  padding: 40px 36px;
   width: 100%;
-  max-width: 420px;
+  max-width: 400px;
   box-shadow: 0 8px 40px rgba(0,0,0,0.07);
   text-align: center;
   animation: lp-fadeUp 0.7s 0.1s ease both;
@@ -189,7 +189,7 @@ html, body {
   font-size: 17px;
   font-weight: 700;
   color: var(--gold);
-  margin-bottom: 18px;
+  margin-bottom: 20px;
   display: block;
   letter-spacing: -0.2px;
 }
@@ -214,6 +214,20 @@ html, body {
   color: var(--text-soft);
   margin-bottom: 22px;
   font-weight: 400;
+}
+
+/* ── TWO-COLUMN ROWS ── */
+.name-row,
+.password-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 0;
+}
+
+.name-row > div,
+.password-row > div {
+  flex: 1;
+  min-width: 0;
 }
 
 /* ── INPUTS ── */
@@ -323,14 +337,14 @@ html, body {
 .password-wrapper input[type="password"],
 .password-wrapper input[type="text"] {
   width: 100%;
-  padding-right: 40px; /* room for the eye icon */
+  padding-right: 36px;
 }
 
 .pw-toggle {
   position: absolute;
-  right: 12px;
+  right: 10px;
   top: 50%;
-  transform: translateY(-60%); /* offset for the 10px margin-bottom on input */
+  transform: translateY(-60%);
   background: none;
   border: none;
   padding: 0;
@@ -504,7 +518,7 @@ html, body {
     padding: 40px 24px 20px;
   }
 
-  .logo-wrapper img { max-width: 180px; }
+  .logo-wrapper img { max-width: 200px; }
 
   .right-side {
     width: 100%;
@@ -513,7 +527,7 @@ html, body {
 
   .register-form {
     max-width: 100%;
-    padding: 28px 20px;
+    padding: 32px 24px;
     margin-left: 0;
   }
 }
@@ -529,4 +543,11 @@ html, body {
   }
 
   .register-form h2 { font-size: 22px; }
+
+  /* Stack name row and password row on very small screens */
+  .name-row,
+  .password-row {
+    flex-direction: column;
+    gap: 0;
+  }
 }

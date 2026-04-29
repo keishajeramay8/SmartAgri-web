@@ -228,10 +228,6 @@ html, body {
   border-color: #e91e8c;
 }
 
-.db-active-badge {
-  display: none;
-}
-
 /* ─── STATS ROW ─── */
 .db-stats {
   display: grid;
@@ -270,18 +266,6 @@ html, body {
   grid-template-columns: 1fr 1fr;
   gap: 18px;
   align-items: start;
-}
-
-.db-left-col {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-
-.db-right-col {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
 }
 
 /* ─── CARD BASE ─── */
@@ -342,13 +326,9 @@ html, body {
   background: #f5f4f0;
   border: 1px solid #e0ddd8;
   border-radius: 7px;
-  overflow: visible; /* allow dropdown to overflow */
   height: 25px;
   transition: border-color 0.15s, box-shadow 0.15s;
   position: relative;
-  /* clip only horizontally to keep the pill shape */
-  clip-path: none;
-  border-radius: 7px;
   overflow: hidden;
 }
 
@@ -504,15 +484,15 @@ html, body {
   color: #c2177a;
 }
 
-.db-weather-suggestion-item.highlighted .db-suggestion-pin {
-  opacity: 1;
-}
-
 .db-suggestion-pin {
   font-size: 11px;
   flex-shrink: 0;
   opacity: 0.5;
   transition: opacity 0.1s;
+}
+
+.db-weather-suggestion-item.highlighted .db-suggestion-pin {
+  opacity: 1;
 }
 
 .db-suggestion-text {
@@ -542,9 +522,9 @@ html, body {
 .db-weather-temp {
   font-size: 36px;
   font-weight: 600;
-  color: #e91e8c;
+  color: #000000;
   line-height: 1;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .db-weather-desc {
@@ -586,7 +566,7 @@ html, body {
   margin-bottom: 30px;
 }
 
-/* ── Sun SVG icon — same footprint as the OWM images ── */
+/* ── Sun SVG icon ── */
 .db-weather-sun-icon {
   width: 85px;
   height: 85px;
@@ -604,10 +584,10 @@ html, body {
   color: #4caf50;
 }
 
-/* ── DATE / TIME ROW ── */
+/* ── DATE / SESSIONS ROW (2 columns — time removed) ── */
 .db-datetime-row {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 0;
   background: #f5f4f0;
   border-radius: 8px;
@@ -647,10 +627,6 @@ html, body {
 .db-dt-mono {
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.5px;
-}
-
-.db-dt-divider {
-  display: none;
 }
 
 .db-filter-btns {
@@ -736,12 +712,6 @@ html, body {
   font-weight: 600;
   color: #1a1a1a;
   line-height: 1;
-}
-
-.db-device-stat-unit {
-  font-size: 11px;
-  color: #aaa;
-  font-weight: 400;
 }
 
 /* ═══════════════════════════════════════════
@@ -859,7 +829,7 @@ html, body {
 }
 
 .db-soil-status.moisture--wet     { color: #1976d2; }
-.db-soil-status.moisture--dry     { color: #e91e8c; }
+.db-soil-status.moisture--dry     { color: #e91e1e; }
 .db-soil-status.moisture--optimal { color: #4caf50; }
 
 .db-growth-badge {
@@ -1011,7 +981,7 @@ html, body {
   }
 
   .db-datetime-row {
-    gap: 0;
+    grid-template-columns: 1fr 1fr;
   }
 
   .db-trends-list {
@@ -1021,6 +991,6 @@ html, body {
   }
 
   .db-weather-suggestions {
-    min-width: 180px;
+    min-width: 200px;
   }
 }

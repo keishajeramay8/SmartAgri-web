@@ -122,7 +122,6 @@ function isClearSky(iconCode) {
   return iconCode === "01d" || iconCode === "01n";
 }
 
-// Fixed SunIcon — matches the same 110px size as the weather icon images
 function SunIcon() {
   return (
     <svg
@@ -149,7 +148,6 @@ function SunIcon() {
   );
 }
 
-// ── Popular cities for autocomplete suggestions ──────────────────
 const POPULAR_CITIES = [
   "Manila", "Cebu City", "Davao", "Quezon City", "Makati",
   "Iloilo", "Cagayan de Oro", "Zamboanga", "Bacolod", "General Santos",
@@ -173,14 +171,12 @@ export default function DashboardPage() {
   const [location, setLocation]             = useState({ lat: null, lon: null });
   const [profileAddress, setProfileAddress] = useState("");
 
-  // ── Weather search state ─────────────────────────────────────────
   const [weatherSearchQuery, setWeatherSearchQuery] = useState("");
   const [searchedWeather, setSearchedWeather]       = useState(null);
   const [searchingWeather, setSearchingWeather]     = useState(false);
   const [weatherSearchError, setWeatherSearchError] = useState("");
   const [isShowingSearchResult, setIsShowingSearchResult] = useState(false);
 
-  // ── Autocomplete state ───────────────────────────────────────────
   const [suggestions, setSuggestions]           = useState([]);
   const [showSuggestions, setShowSuggestions]   = useState(false);
   const [highlightedIdx, setHighlightedIdx]     = useState(-1);
@@ -214,7 +210,6 @@ export default function DashboardPage() {
     navigate("/login");
   };
 
-  // ── Load user profile ───────────────────────────────────────────
   useEffect(() => {
     const fetchData = async () => {
       const user = auth.currentUser;
@@ -244,7 +239,6 @@ export default function DashboardPage() {
     fetchData();
   }, []);
 
-  // ── Realtime profile listener ───────────────────────────────────
   useEffect(() => {
     const user = auth.currentUser;
     if (!user) return;
@@ -436,7 +430,6 @@ export default function DashboardPage() {
     };
   }, [selectedFarmGroup]);
 
-  // ── Fetch weather by lat/lon (profile location) ─────────────────
   useEffect(() => {
     const fetchWeather = async () => {
       if (!location.lat || !location.lon) {
@@ -468,7 +461,6 @@ export default function DashboardPage() {
     fetchWeather();
   }, [location.lat, location.lon, isShowingSearchResult]);
 
-  // ── Autocomplete: filter popular cities + fetch from API ─────────
   const computeSuggestions = useCallback((value) => {
     if (!value.trim()) {
       setSuggestions([]);
@@ -478,12 +470,10 @@ export default function DashboardPage() {
 
     const lower = value.toLowerCase();
 
-    // Local matches first
     const localMatches = POPULAR_CITIES.filter((c) =>
       c.toLowerCase().startsWith(lower)
     ).slice(0, 5);
 
-    // Merge with API fetched suggestions
     const allSuggestions = [
       ...new Set([...localMatches, ...fetchedSuggestions]),
     ].slice(0, 7);
@@ -494,7 +484,6 @@ export default function DashboardPage() {
     setHighlightedIdx(-1);
   }, [fetchedSuggestions]);
 
-  // ── Fetch city suggestions from OpenWeatherMap Geo API ───────────
   const fetchCitySuggestions = useCallback(async (value) => {
     if (!value || value.trim().length < 2) {
       setFetchedSuggestions([]);
@@ -526,7 +515,6 @@ export default function DashboardPage() {
     }
   }, []);
 
-  // Update suggestions whenever fetchedSuggestions or query changes
   useEffect(() => {
     computeSuggestions(weatherSearchQuery);
   }, [weatherSearchQuery, fetchedSuggestions, computeSuggestions]);
@@ -536,7 +524,6 @@ export default function DashboardPage() {
     setWeatherSearchQuery(value);
     if (weatherSearchError) setWeatherSearchError("");
 
-    // Debounce API fetch
     clearTimeout(fetchDebounceRef.current);
     if (value.trim().length >= 2) {
       fetchDebounceRef.current = setTimeout(() => {
@@ -551,20 +538,18 @@ export default function DashboardPage() {
     if (!searchWrapRef.current) return;
     const rect = searchWrapRef.current.getBoundingClientRect();
     setSuggestionsPos({
-      top:   rect.bottom + window.scrollY + 4,
+      top:   rect.bottom + window.scrollY + 6,
       left:  rect.left   + window.scrollX,
       width: rect.width,
     });
   }, []);
 
   const handleSuggestionSelect = (city) => {
-    // Extract just the city name part (before any comma)
     const cityName = city.split(",")[0].trim();
     setWeatherSearchQuery(city);
     setSuggestions([]);
     setShowSuggestions(false);
     setHighlightedIdx(-1);
-    // Auto-search when selecting a suggestion
     triggerWeatherSearch(cityName);
   };
 
@@ -606,7 +591,6 @@ export default function DashboardPage() {
     triggerWeatherSearch();
   };
 
-  // Keyboard navigation for suggestions
   const handleSearchKeyDown = (e) => {
     if (!showSuggestions || suggestions.length === 0) return;
 
@@ -625,7 +609,6 @@ export default function DashboardPage() {
     }
   };
 
-  // Close suggestions on outside click
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (
@@ -652,10 +635,8 @@ export default function DashboardPage() {
     setHighlightedIdx(-1);
   };
 
-  // ── Display weather: searched city takes priority ────────────────
   const displayWeather = isShowingSearchResult ? searchedWeather : weather;
 
-  // ── Live clock ───────────────────────────────────────────────────
   useEffect(() => {
     if (!displayWeather) return;
     const interval = setInterval(() => {
@@ -834,6 +815,13 @@ export default function DashboardPage() {
     return "#4caf50";
   };
 
+  const getMoistureTrailColor = (status = "") => {
+    const s = status.toLowerCase();
+    if (s.includes("wet"))  return "#dbeafe"; // light blue
+    if (s.includes("dry"))  return "#fce7f3"; // light pink/red
+    return "#dcfce7";                          // light green
+  };
+
   const getDeviceStatus = (latestReading) => {
     if (!latestReading) return "offline";
     const lastSeen = toDate(latestReading.time) ?? toDate(latestReading.timestamp);
@@ -971,7 +959,6 @@ export default function DashboardPage() {
               <div className="db-weather-header-right">
 
                 {/* ── Weather search with autocomplete ── */}
-                {/* Wrapper is position:relative so floating labels don't affect card height */}
                 <div className="db-weather-search-anchor" ref={searchWrapRef}>
                   <form className="db-weather-search-form" onSubmit={handleWeatherSearch}>
                     <div className="db-weather-search-wrap">
@@ -1145,6 +1132,7 @@ export default function DashboardPage() {
                   const status        = device.latestReading?.soilStatus || "No Data";
                   const moistureClass = getMoistureClass(status);
                   const color         = getMoistureColor(status);
+                  const trailColor    = getMoistureTrailColor(status);
                   const devStatus     = getDeviceStatus(device.latestReading);
                   const trend         = computeTrend(deviceReadingHistory[device.deviceId] ?? []);
                   const tm            = TREND_META[trend];
@@ -1165,7 +1153,7 @@ export default function DashboardPage() {
                           styles={buildStyles({
                             pathColor:  color,
                             textColor:  "#1a1a1a",
-                            trailColor: "#f0eeea",
+                            trailColor: trailColor,
                             textSize:   "18px",
                           })}
                         />
@@ -1174,16 +1162,7 @@ export default function DashboardPage() {
                         <span className={`db-soil-status ${moistureClass}`}>{status}</span>
                         <span className="db-growth-badge">{device.growthstage}</span>
                       </div>
-                      {trend !== "stable" && (
-                        <div className="db-device-trend-row">
-                          <span
-                            className="db-trend-badge db-trend-badge--sm"
-                            style={{ color: tm.color, borderColor: tm.color + "44", background: tm.color + "11" }}
-                          >
-                            {tm.icon} {tm.label}
-                          </span>
-                        </div>
-                      )}
+                    
                     </div>
                   );
                 })}
@@ -1203,14 +1182,11 @@ export default function DashboardPage() {
               <span className="db-water-total">{fmtWater(totalWaterML)}</span>
             </div>
 
+            {/* ── DATE + SESSIONS only (time removed) ── */}
             <div className="db-datetime-row">
               <div className="db-datetime-block">
                 <span className="db-dt-label">Date</span>
                 <span className="db-dt-value">{currentDate || "—"}</span>
-              </div>
-              <div className="db-datetime-block">
-                <span className="db-dt-label">Time</span>
-                <span className="db-dt-value db-dt-mono">{currentTime || "—"}</span>
               </div>
               <div className="db-datetime-block">
                 <span className="db-dt-label">Sessions</span>

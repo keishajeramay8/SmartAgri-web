@@ -376,6 +376,19 @@ html, body {
 .pf-field-val        { font-size: 13.5px; color: #1a1a1a; padding: 2px 0; line-height: 1.5; }
 .pf-field-val--muted { color: #aaa; }
 
+/* ── Read-only address display ── */
+.pf-address-readonly {
+  font-size: 13.5px;
+  color: #1a1a1a;
+  line-height: 1.6;
+  padding: 8px 11px;
+  background: #f5f4f0;
+  border: 1px solid #e0ddd8;
+  border-radius: 8px;
+  cursor: default;
+  user-select: text;
+}
+
 .pf-input {
   width: 100%;
   padding: 8px 11px;
@@ -391,42 +404,6 @@ html, body {
   border-color: #e91e8c;
   box-shadow: 0 0 0 3px rgba(233,30,140,0.08);
 }
-
-/* ── Address autocomplete wrapper ── */
-.pf-address-wrap {
-  position: relative;
-  width: 100%;
-}
-
-.pf-coords-hint {
-  font-size: 11px;
-  color: #aaa;
-  margin-top: 5px;
-  font-variant-numeric: tabular-nums;
-}
-
-/* Google Places dropdown override — keep it on top & themed */
-.pac-container {
-  border-radius: 10px !important;
-  border: 1px solid #e0ddd8 !important;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.10) !important;
-  font-family: 'Segoe UI', sans-serif !important;
-  font-size: 13px !important;
-  margin-top: 4px !important;
-  z-index: 9999 !important;
-}
-.pac-item {
-  padding: 8px 12px !important;
-  cursor: pointer !important;
-  border-top: 1px solid #f0eeea !important;
-  line-height: 1.5 !important;
-}
-.pac-item:first-child { border-top: none !important; }
-.pac-item:hover { background: #fce4f0 !important; }
-.pac-item-selected { background: #fce4f0 !important; }
-.pac-matched { color: #e91e8c !important; font-weight: 600 !important; }
-.pac-icon { display: none !important; }
-.pac-item-query { font-size: 13px !important; color: #1a1a1a !important; }
 
 /* Action buttons */
 .pf-action-row {

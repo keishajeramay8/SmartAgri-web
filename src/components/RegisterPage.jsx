@@ -317,33 +317,37 @@ export default function RegisterPage() {
               <div className="reg-error-banner">{errors.general}</div>
             )}
 
-            {/* First Name */}
-            <input
-              type="text"
-              name="firstName"
-              placeholder="First Name"
-              value={formData.firstName}
-              onChange={handleChange}
-              className={errors.firstName ? "input-error" : ""}
-            />
-            {errors.firstName && (
-              <span className="inline-error">{errors.firstName}</span>
-            )}
+            {/* ── First Name + Last Name (side by side) ── */}
+            <div className="name-row">
+              <div>
+                <input
+                  type="text"
+                  name="firstName"
+                  placeholder="First Name"
+                  value={formData.firstName}
+                  onChange={handleChange}
+                  className={errors.firstName ? "input-error" : ""}
+                />
+                {errors.firstName && (
+                  <span className="inline-error">{errors.firstName}</span>
+                )}
+              </div>
+              <div>
+                <input
+                  type="text"
+                  name="lastName"
+                  placeholder="Last Name"
+                  value={formData.lastName}
+                  onChange={handleChange}
+                  className={errors.lastName ? "input-error" : ""}
+                />
+                {errors.lastName && (
+                  <span className="inline-error">{errors.lastName}</span>
+                )}
+              </div>
+            </div>
 
-            {/* Last Name */}
-            <input
-              type="text"
-              name="lastName"
-              placeholder="Last Name"
-              value={formData.lastName}
-              onChange={handleChange}
-              className={errors.lastName ? "input-error" : ""}
-            />
-            {errors.lastName && (
-              <span className="inline-error">{errors.lastName}</span>
-            )}
-
-            {/* Email */}
+            {/* ── Email ── */}
             <input
               type="text"
               name="email"
@@ -356,7 +360,7 @@ export default function RegisterPage() {
               <span className="inline-error">{errors.email}</span>
             )}
 
-            {/* Address */}
+            {/* ── Address ── */}
             <div style={{ position: "relative" }}>
               <input
                 type="text"
@@ -384,55 +388,59 @@ export default function RegisterPage() {
               <span className="inline-error">{errors.address}</span>
             )}
 
-            {/* Password */}
-            <div className="password-wrapper">
-              <input
-                type={showPassword ? "text" : "password"}
-                name="password"
-                placeholder="Password"
-                value={formData.password}
-                onChange={handleChange}
-                className={errors.password ? "input-error" : ""}
-              />
-              <button
-                type="button"
-                className="pw-toggle"
-                onClick={() => setShowPassword((v) => !v)}
-                tabIndex={-1}
-                aria-label={showPassword ? "Hide password" : "Show password"}
-              >
-                {showPassword ? <EyeOffIcon /> : <EyeIcon />}
-              </button>
+            {/* ── Password + Confirm Password (side by side) ── */}
+            <div className="password-row">
+              <div>
+                <div className="password-wrapper">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    name="password"
+                    placeholder="Password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    className={errors.password ? "input-error" : ""}
+                  />
+                  <button
+                    type="button"
+                    className="pw-toggle"
+                    onClick={() => setShowPassword((v) => !v)}
+                    tabIndex={-1}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                  </button>
+                </div>
+                {errors.password && (
+                  <span className="inline-error">{errors.password}</span>
+                )}
+              </div>
+              <div>
+                <div className="password-wrapper">
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    name="confirmPassword"
+                    placeholder="Confirm"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    className={errors.confirmPassword ? "input-error" : ""}
+                  />
+                  <button
+                    type="button"
+                    className="pw-toggle"
+                    onClick={() => setShowConfirmPassword((v) => !v)}
+                    tabIndex={-1}
+                    aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                  >
+                    {showConfirmPassword ? <EyeOffIcon /> : <EyeIcon />}
+                  </button>
+                </div>
+                {errors.confirmPassword && (
+                  <span className="inline-error">{errors.confirmPassword}</span>
+                )}
+              </div>
             </div>
-            {errors.password && (
-              <span className="inline-error">{errors.password}</span>
-            )}
 
-            {/* Confirm Password */}
-            <div className="password-wrapper">
-              <input
-                type={showConfirmPassword ? "text" : "password"}
-                name="confirmPassword"
-                placeholder="Confirm Password"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                className={errors.confirmPassword ? "input-error" : ""}
-              />
-              <button
-                type="button"
-                className="pw-toggle"
-                onClick={() => setShowConfirmPassword((v) => !v)}
-                tabIndex={-1}
-                aria-label={showConfirmPassword ? "Hide password" : "Show password"}
-              >
-                {showConfirmPassword ? <EyeOffIcon /> : <EyeIcon />}
-              </button>
-            </div>
-            {errors.confirmPassword && (
-              <span className="inline-error">{errors.confirmPassword}</span>
-            )}
-
-            {/* Remember me */}
+            {/* ── Remember me ── */}
             <label className="checkbox">
               <input
                 type="checkbox"
