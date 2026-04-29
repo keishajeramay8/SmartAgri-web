@@ -33,29 +33,33 @@ const PASSWORD_RULES = [
   },
 ];
 
-const isPasswordValid = (pw) =>
-  PASSWORD_RULES.every((rule) => rule.test(pw));
+const isPasswordValid = (pw) => PASSWORD_RULES.every((rule) => rule.test(pw));
+const getFailedRules  = (pw) => PASSWORD_RULES.filter((rule) => !rule.test(pw));
 
-const getFailedRules = (pw) =>
-  PASSWORD_RULES.filter((rule) => !rule.test(pw));
-
-// ── Eye icons ────────────────────────────────────────────────────────
-const EyeIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24"
-    fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-    <circle cx="12" cy="12" r="3"/>
-  </svg>
-);
-
-const EyeOffIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24"
-    fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
-    <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
-    <line x1="1" y1="1" x2="23" y2="23"/>
-  </svg>
-);
+// Single toggle icon:
+// visible=false → closed/slashed eye = password is hidden, click to show
+// visible=true  → open eye           = password is visible, click to hide
+const PasswordToggleIcon = ({ visible }) => {
+  if (visible) {
+    return (
+      <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17"
+        viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+        <circle cx="12" cy="12" r="3" />
+      </svg>
+    );
+  }
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17"
+      viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
+      <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
+      <line x1="1" y1="1" x2="23" y2="23" />
+    </svg>
+  );
+};
 
 export default function RegisterPage() {
   const navigate = useNavigate();
@@ -80,87 +84,49 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword]               = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // ── Input change — no validation, just update state ───────────────
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     const newValue = type === "checkbox" ? checked : value;
-
     setFormData((prev) => ({ ...prev, [name]: newValue }));
-
-    // If already submitted, clear individual error as user corrects
-    if (submitted) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
-    }
-
-    // Address autocomplete
+    if (submitted) setErrors((prev) => ({ ...prev, [name]: "" }));
     if (name === "address") {
-      setFormData((prev) => ({
-        ...prev,
-        address: newValue,
-        lat: null,
-        lon: null,
-      }));
+      setFormData((prev) => ({ ...prev, address: newValue, lat: null, lon: null }));
       if (value) fetchAddressSuggestions(value);
-      else {
-        setSuggestions([]);
-        setShowSuggestions(false);
-      }
+      else { setSuggestions([]); setShowSuggestions(false); }
     }
   };
 
-  // ── Run all validations, return errors object ─────────────────────
   const runValidation = (data) => {
     const errs = {};
-
     if (!data.firstName.trim()) errs.firstName = "First name is required.";
     if (!data.lastName.trim())  errs.lastName  = "Last name is required.";
-
     const gmailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
     if (!data.email.trim()) {
       errs.email = "Email is required.";
     } else if (!gmailRegex.test(data.email.trim())) {
       errs.email = "Please enter a valid Gmail address.";
     }
-
     if (!data.address || !data.lat || !data.lon) {
       errs.address = "Please select a Philippine address from the suggestions.";
     }
-
     if (!data.password) {
       errs.password = "Password is required.";
     } else if (!isPasswordValid(data.password)) {
-      const failed = getFailedRules(data.password);
-      errs.password = failed.map((r) => r.label).join(" • ");
+      errs.password = getFailedRules(data.password).map((r) => r.label).join(" • ");
     }
-
     if (!data.confirmPassword) {
       errs.confirmPassword = "Please confirm your password.";
-    } else if (
-      data.password &&
-      isPasswordValid(data.password) &&
-      data.password !== data.confirmPassword
-    ) {
+    } else if (data.password && isPasswordValid(data.password) && data.password !== data.confirmPassword) {
       errs.confirmPassword = "Passwords do not match.";
     }
-
     return errs;
   };
 
-  // ── Address autocomplete ──────────────────────────────────────────
   const fetchAddressSuggestions = async (input) => {
     try {
-      const res = await axios.get(
-        "https://api.geoapify.com/v1/geocode/autocomplete",
-        {
-          params: {
-            text:   input,
-            limit:  5,
-            lang:   "en",
-            country: "PH",
-            apiKey: GEOAPIFY_KEY,
-          },
-        }
-      );
+      const res = await axios.get("https://api.geoapify.com/v1/geocode/autocomplete", {
+        params: { text: input, limit: 5, lang: "en", country: "PH", apiKey: GEOAPIFY_KEY },
+      });
       setSuggestions(res.data.features || []);
       setShowSuggestions(true);
     } catch (error) {
@@ -175,29 +141,21 @@ export default function RegisterPage() {
       lat:     place.properties.lat,
       lon:     place.properties.lon,
     }));
-    if (submitted) {
-      setErrors((prev) => ({ ...prev, address: "" }));
-    }
+    if (submitted) setErrors((prev) => ({ ...prev, address: "" }));
     setSuggestions([]);
     setShowSuggestions(false);
   };
 
-  // ── Submit ────────────────────────────────────────────────────────
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitted(true);
-
     const errs = runValidation(formData);
     setErrors(errs);
-
     if (Object.keys(errs).length > 0) return;
-
     setLoading(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        formData.email.trim(),
-        formData.password
+        auth, formData.email.trim(), formData.password
       );
       const user = userCredential.user;
       await setDoc(doc(db, "users", user.uid), {
@@ -214,32 +172,22 @@ export default function RegisterPage() {
     } catch (error) {
       console.error(error);
       if (error.code === "auth/email-already-in-use") {
-        setErrors((prev) => ({
-          ...prev,
-          email: "This email is already registered.",
-        }));
+        setErrors((prev) => ({ ...prev, email: "This email is already registered." }));
       } else {
-        setErrors((prev) => ({
-          ...prev,
-          general: error.message,
-        }));
+        setErrors((prev) => ({ ...prev, general: error.message }));
       }
     } finally {
       setLoading(false);
     }
   };
 
-  // ── Google register ───────────────────────────────────────────────
   const handleGoogleRegister = async () => {
     const provider = new GoogleAuthProvider();
     try {
       await signInWithRedirect(auth, provider);
     } catch (error) {
       console.error("Google Sign-In error:", error);
-      setErrors((prev) => ({
-        ...prev,
-        general: "Google Registration failed: " + error.message,
-      }));
+      setErrors((prev) => ({ ...prev, general: "Google Registration failed: " + error.message }));
     }
   };
 
@@ -247,7 +195,7 @@ export default function RegisterPage() {
     getRedirectResult(auth)
       .then(async (result) => {
         if (result) {
-          const user    = result.user;
+          const user     = result.user;
           const userRef  = doc(db, "users", user.uid);
           const userSnap = await getDoc(userRef);
           if (!userSnap.exists()) {
@@ -281,10 +229,7 @@ export default function RegisterPage() {
           <li><button onClick={() => navigate("/")}>Home</button></li>
           <li><button onClick={() => navigate("/login")}>Login</button></li>
           <li>
-            <button
-              className="lp-nav__active-btn"
-              onClick={() => navigate("/register")}
-            >
+            <button className="lp-nav__active-btn" onClick={() => navigate("/register")}>
               Register
             </button>
           </li>
@@ -312,12 +257,11 @@ export default function RegisterPage() {
             <h2>Create Account</h2>
             <p>Register your admin account below.</p>
 
-            {/* General error */}
             {errors.general && (
               <div className="reg-error-banner">{errors.general}</div>
             )}
 
-            {/* ── First Name + Last Name (side by side) ── */}
+            {/* ── First Name + Last Name ── */}
             <div className="name-row">
               <div>
                 <input
@@ -328,9 +272,7 @@ export default function RegisterPage() {
                   onChange={handleChange}
                   className={errors.firstName ? "input-error" : ""}
                 />
-                {errors.firstName && (
-                  <span className="inline-error">{errors.firstName}</span>
-                )}
+                {errors.firstName && <span className="inline-error">{errors.firstName}</span>}
               </div>
               <div>
                 <input
@@ -341,9 +283,7 @@ export default function RegisterPage() {
                   onChange={handleChange}
                   className={errors.lastName ? "input-error" : ""}
                 />
-                {errors.lastName && (
-                  <span className="inline-error">{errors.lastName}</span>
-                )}
+                {errors.lastName && <span className="inline-error">{errors.lastName}</span>}
               </div>
             </div>
 
@@ -356,9 +296,7 @@ export default function RegisterPage() {
               onChange={handleChange}
               className={errors.email ? "input-error" : ""}
             />
-            {errors.email && (
-              <span className="inline-error">{errors.email}</span>
-            )}
+            {errors.email && <span className="inline-error">{errors.email}</span>}
 
             {/* ── Address ── */}
             <div style={{ position: "relative" }}>
@@ -374,22 +312,19 @@ export default function RegisterPage() {
               {showSuggestions && suggestions.length > 0 && (
                 <ul className="suggestions-list">
                   {suggestions.map((item) => (
-                    <li
-                      key={item.properties.place_id}
-                      onClick={() => handleSelectAddress(item)}
-                    >
+                    <li key={item.properties.place_id} onClick={() => handleSelectAddress(item)}>
                       {item.properties.formatted}
                     </li>
                   ))}
                 </ul>
               )}
             </div>
-            {errors.address && (
-              <span className="inline-error">{errors.address}</span>
-            )}
+            {errors.address && <span className="inline-error">{errors.address}</span>}
 
-            {/* ── Password + Confirm Password (side by side) ── */}
+            {/* ── Password + Confirm Password ── */}
             <div className="password-row">
+
+              {/* Password */}
               <div>
                 <div className="password-wrapper">
                   <input
@@ -407,13 +342,13 @@ export default function RegisterPage() {
                     tabIndex={-1}
                     aria-label={showPassword ? "Hide password" : "Show password"}
                   >
-                    {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                    <PasswordToggleIcon visible={showPassword} />
                   </button>
                 </div>
-                {errors.password && (
-                  <span className="inline-error">{errors.password}</span>
-                )}
+                {errors.password && <span className="inline-error">{errors.password}</span>}
               </div>
+
+              {/* Confirm Password */}
               <div>
                 <div className="password-wrapper">
                   <input
@@ -431,13 +366,12 @@ export default function RegisterPage() {
                     tabIndex={-1}
                     aria-label={showConfirmPassword ? "Hide password" : "Show password"}
                   >
-                    {showConfirmPassword ? <EyeOffIcon /> : <EyeIcon />}
+                    <PasswordToggleIcon visible={showConfirmPassword} />
                   </button>
                 </div>
-                {errors.confirmPassword && (
-                  <span className="inline-error">{errors.confirmPassword}</span>
-                )}
+                {errors.confirmPassword && <span className="inline-error">{errors.confirmPassword}</span>}
               </div>
+
             </div>
 
             {/* ── Remember me ── */}
@@ -451,21 +385,13 @@ export default function RegisterPage() {
               Remember me
             </label>
 
-            <button
-              type="submit"
-              className="register-btn"
-              disabled={loading}
-            >
+            <button type="submit" className="register-btn" disabled={loading}>
               {loading ? "Registering..." : "Register"}
             </button>
 
             <div className="divider"><span>or</span></div>
 
-            <button
-              type="button"
-              className="google-btn"
-              onClick={handleGoogleRegister}
-            >
+            <button type="button" className="google-btn" onClick={handleGoogleRegister}>
               Continue with Google
             </button>
 
