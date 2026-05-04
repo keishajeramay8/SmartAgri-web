@@ -10,7 +10,7 @@ import { auth, db } from "../firebase";
 import { setDoc, doc, serverTimestamp, getDoc } from "firebase/firestore";
 import axios from "axios";
 import logo from "../assets/landinglogo.png";
-import "./RegisterPage.css";
+import "./LoginPage.css"; // ← reuse LoginPage styles — no separate CSS needed
 
 const GEOAPIFY_KEY = "ceea5600e9214d0cb5719308012683fd";
 
@@ -36,13 +36,13 @@ const PASSWORD_RULES = [
 const isPasswordValid = (pw) => PASSWORD_RULES.every((rule) => rule.test(pw));
 const getFailedRules  = (pw) => PASSWORD_RULES.filter((rule) => !rule.test(pw));
 
-// Single toggle icon:
-// visible=false → closed/slashed eye = password is hidden, click to show
-// visible=true  → open eye           = password is visible, click to hide
+// Single toggle icon — identical to LoginPage
+// visible=false → slashed eye  = password hidden, click to show
+// visible=true  → open eye     = password visible, click to hide
 const PasswordToggleIcon = ({ visible }) => {
   if (visible) {
     return (
-      <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17"
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
         viewBox="0 0 24 24" fill="none" stroke="currentColor"
         strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
@@ -51,7 +51,7 @@ const PasswordToggleIcon = ({ visible }) => {
     );
   }
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17"
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18"
       viewBox="0 0 24 24" fill="none" stroke="currentColor"
       strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
@@ -76,11 +76,11 @@ export default function RegisterPage() {
     remember:        false,
   });
 
-  const [errors, setErrors]           = useState({});
-  const [submitted, setSubmitted]     = useState(false);
-  const [suggestions, setSuggestions] = useState([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [loading, setLoading]         = useState(false);
+  const [errors, setErrors]                           = useState({});
+  const [submitted, setSubmitted]                     = useState(false);
+  const [suggestions, setSuggestions]                 = useState([]);
+  const [showSuggestions, setShowSuggestions]         = useState(false);
+  const [loading, setLoading]                         = useState(false);
   const [showPassword, setShowPassword]               = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -201,7 +201,7 @@ export default function RegisterPage() {
           if (!userSnap.exists()) {
             await setDoc(userRef, {
               firstName: user.displayName?.split(" ")[0] || "",
-              lastName:  user.displayName?.split(" ")[1] || "",
+              lastName:  user.displayName?.split(" ").slice(1).join(" ") || "",
               email:     user.email,
               address:   "",
               lat:       null,
@@ -215,6 +215,24 @@ export default function RegisterPage() {
       })
       .catch((error) => console.error("Redirect result error:", error));
   }, [navigate]);
+
+  // Shared inline error style
+  const errStyle = {
+    color: "#C42050",
+    fontSize: "11.5px",
+    marginTop: "-8px",
+    marginBottom: "10px",
+    textAlign: "left",
+    display: "block",
+    fontWeight: 500,
+  };
+
+  // Shared error input style
+  const errInput = {
+    borderColor: "#E63462",
+    boxShadow: "0 0 0 3px rgba(230,52,98,0.10)",
+    background: "#fff8fb",
+  };
 
   return (
     <div>
@@ -237,7 +255,7 @@ export default function RegisterPage() {
       </nav>
 
       {/* ── PAGE ── */}
-      <section className="register-page">
+      <div className="login-page">
 
         {/* LEFT — Illustration */}
         <div className="left-side">
@@ -248,42 +266,43 @@ export default function RegisterPage() {
 
         {/* RIGHT — Form */}
         <div className="right-side">
-          <form className="register-form" onSubmit={handleSubmit} noValidate>
+          <form className="login-form" onSubmit={handleSubmit} noValidate>
 
-            <span className="register-form-brand">
-              <span className="register-form-brand-italic">Smart</span>AGRI
+            <span className="login-form-brand">
+              <span className="login-form-brand-italic">Smart</span>AGRI
             </span>
 
             <h2>Create Account</h2>
             <p>Register your admin account below.</p>
 
+            {/* ── General error ── */}
             {errors.general && (
-              <div className="reg-error-banner">{errors.general}</div>
+              <div className="login-error">{errors.general}</div>
             )}
 
             {/* ── First Name + Last Name ── */}
-            <div className="name-row">
-              <div>
+            <div style={{ display: "flex", gap: "10px" }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
                 <input
                   type="text"
                   name="firstName"
                   placeholder="First Name"
                   value={formData.firstName}
                   onChange={handleChange}
-                  className={errors.firstName ? "input-error" : ""}
+                  style={errors.firstName ? errInput : {}}
                 />
-                {errors.firstName && <span className="inline-error">{errors.firstName}</span>}
+                {errors.firstName && <span style={errStyle}>{errors.firstName}</span>}
               </div>
-              <div>
+              <div style={{ flex: 1, minWidth: 0 }}>
                 <input
                   type="text"
                   name="lastName"
                   placeholder="Last Name"
                   value={formData.lastName}
                   onChange={handleChange}
-                  className={errors.lastName ? "input-error" : ""}
+                  style={errors.lastName ? errInput : {}}
                 />
-                {errors.lastName && <span className="inline-error">{errors.lastName}</span>}
+                {errors.lastName && <span style={errStyle}>{errors.lastName}</span>}
               </div>
             </div>
 
@@ -294,11 +313,11 @@ export default function RegisterPage() {
               placeholder="Email address"
               value={formData.email}
               onChange={handleChange}
-              className={errors.email ? "input-error" : ""}
+              style={errors.email ? errInput : {}}
             />
-            {errors.email && <span className="inline-error">{errors.email}</span>}
+            {errors.email && <span style={errStyle}>{errors.email}</span>}
 
-            {/* ── Address ── */}
+            {/* ── Address with autocomplete ── */}
             <div style={{ position: "relative" }}>
               <input
                 type="text"
@@ -306,73 +325,83 @@ export default function RegisterPage() {
                 placeholder="Enter your address"
                 value={formData.address}
                 onChange={handleChange}
-                className={errors.address ? "input-error" : ""}
                 autoComplete="off"
+                style={errors.address ? errInput : {}}
               />
               {showSuggestions && suggestions.length > 0 && (
-                <ul className="suggestions-list">
+                <ul style={{
+                  position: "absolute",
+                  top: "calc(100% + 2px)",
+                  left: 0,
+                  right: 0,
+                  background: "#fff",
+                  border: "1px solid #E8E4DA",
+                  borderRadius: "10px",
+                  listStyle: "none",
+                  padding: "4px 0",
+                  zIndex: 100,
+                  boxShadow: "0 8px 24px rgba(0,0,0,0.10)",
+                  overflow: "hidden",
+                }}>
                   {suggestions.map((item) => (
-                    <li key={item.properties.place_id} onClick={() => handleSelectAddress(item)}>
+                    <li
+                      key={item.properties.place_id}
+                      onClick={() => handleSelectAddress(item)}
+                      style={{ padding: "10px 14px", fontSize: "13px", cursor: "pointer", textAlign: "left", lineHeight: "1.4", transition: "background 0.15s" }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = "#E8F3E8"; e.currentTarget.style.color = "#3A7D44"; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = ""; e.currentTarget.style.color = ""; }}
+                    >
                       {item.properties.formatted}
                     </li>
                   ))}
                 </ul>
               )}
             </div>
-            {errors.address && <span className="inline-error">{errors.address}</span>}
+            {errors.address && <span style={errStyle}>{errors.address}</span>}
 
-            {/* ── Password + Confirm Password ── */}
-            <div className="password-row">
-
-              {/* Password */}
-              <div>
-                <div className="password-wrapper">
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    name="password"
-                    placeholder="Password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    className={errors.password ? "input-error" : ""}
-                  />
-                  <button
-                    type="button"
-                    className="pw-toggle"
-                    onClick={() => setShowPassword((v) => !v)}
-                    tabIndex={-1}
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                  >
-                    <PasswordToggleIcon visible={showPassword} />
-                  </button>
-                </div>
-                {errors.password && <span className="inline-error">{errors.password}</span>}
-              </div>
-
-              {/* Confirm Password */}
-              <div>
-                <div className="password-wrapper">
-                  <input
-                    type={showConfirmPassword ? "text" : "password"}
-                    name="confirmPassword"
-                    placeholder="Confirm"
-                    value={formData.confirmPassword}
-                    onChange={handleChange}
-                    className={errors.confirmPassword ? "input-error" : ""}
-                  />
-                  <button
-                    type="button"
-                    className="pw-toggle"
-                    onClick={() => setShowConfirmPassword((v) => !v)}
-                    tabIndex={-1}
-                    aria-label={showConfirmPassword ? "Hide password" : "Show password"}
-                  >
-                    <PasswordToggleIcon visible={showConfirmPassword} />
-                  </button>
-                </div>
-                {errors.confirmPassword && <span className="inline-error">{errors.confirmPassword}</span>}
-              </div>
-
+            {/* ── Password ── */}
+            <div className="password-wrapper">
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                placeholder="Password"
+                value={formData.password}
+                onChange={handleChange}
+                style={errors.password ? errInput : {}}
+              />
+              <button
+                type="button"
+                className="pw-toggle"
+                onClick={() => setShowPassword((v) => !v)}
+                tabIndex={-1}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                <PasswordToggleIcon visible={showPassword} />
+              </button>
             </div>
+            {errors.password && <span style={errStyle}>{errors.password}</span>}
+
+            {/* ── Confirm Password ── */}
+            <div className="password-wrapper">
+              <input
+                type={showConfirmPassword ? "text" : "password"}
+                name="confirmPassword"
+                placeholder="Confirm password"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                style={errors.confirmPassword ? errInput : {}}
+              />
+              <button
+                type="button"
+                className="pw-toggle"
+                onClick={() => setShowConfirmPassword((v) => !v)}
+                tabIndex={-1}
+                aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+              >
+                <PasswordToggleIcon visible={showConfirmPassword} />
+              </button>
+            </div>
+            {errors.confirmPassword && <span style={errStyle}>{errors.confirmPassword}</span>}
 
             {/* ── Remember me ── */}
             <label className="checkbox">
@@ -385,7 +414,7 @@ export default function RegisterPage() {
               Remember me
             </label>
 
-            <button type="submit" className="register-btn" disabled={loading}>
+            <button type="submit" className="login-btn" disabled={loading}>
               {loading ? "Registering..." : "Register"}
             </button>
 
@@ -395,13 +424,14 @@ export default function RegisterPage() {
               Continue with Google
             </button>
 
-            <p className="signin-link">
+            <div className="signin-link">
               Already have an account? <Link to="/login">Sign in</Link>
-            </p>
+            </div>
 
           </form>
         </div>
-      </section>
+      </div>
+
     </div>
   );
 }
